@@ -1,0 +1,52 @@
+/*
+ * Utilities for running tests, such as specific network forward/backward functions.
+ *
+ * Note: These are *not* for end-user consumption.
+ *
+ * Namespace requirements:
+ *  - "affine" available via `source("affine.dml") as affine`.
+ *  - "l2_loss" available via `source("l2_loss.dml") as l2_loss`.
+ *  - All dependencies of above sources.
+ */
+two_layer_affine_l2_net = function(matrix[double] X, matrix[double] y,
+                                matrix[double] W1, matrix[double] b1,
+                                matrix[double] W2, matrix[double] b2)
+    return (matrix[double] pred, double loss, 
+            matrix[double] dX,
+            matrix[double] dW1, matrix[double] db1,
+            matrix[double] dW2, matrix[double] db2) {
+  # Compute forward pass
+  [loss, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+
+  # Compute backward pass
+  [dX, dpred, daout, dhout, dW1, db1, dW2, db2] = 
+    test_util::two_layer_affine_l2_net_backward(X, y, pred, aout, hout, W1, b1, W2, b2)
+}
+
+two_layer_affine_l2_net_forward = function(matrix[double] X, matrix[double] y,
+                                           matrix[double] W1, matrix[double] b1,
+                                           matrix[double] W2, matrix[double] b2)
+    return (double loss, matrix[double] pred, matrix[double] aout, matrix[double] hout) {
+  # Compute forward pass
+  hout = affine::forward(X, W1, b1)
+  aout = relu::forward(hout)
+  pred = affine::forward(aout, W2, b2)
+
+  # Compute loss
+  loss = l2_loss::forward(pred, y)
+}
+
+two_layer_affine_l2_net_backward = function(matrix[double] X, matrix[double] y, matrix[double] pred,
+                                            matrix[double] aout, matrix[double] hout,
+                                            matrix[double] W1, matrix[double] b1,
+                                            matrix[double] W2, matrix[double] b2)
+    return (matrix[double] dX, matrix[double] dpred,
+            matrix[double] daout, matrix[double] dhout,
+            matrix[double] dW1, matrix[double] db1, matrix[double] dW2, matrix[double] db2) {
+  # Compute backward pass
+  dpred = l2_loss::backward(pred, y)
+  [daout, dW2, db2] = affine::backward(dpred, aout, W2, b2)
+  dhout = relu::backward(daout, hout)
+  [dX, dW1, db1] = affine::backward(dhout, X, W1, b1)
+}
+

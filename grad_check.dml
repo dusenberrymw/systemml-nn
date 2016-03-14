@@ -1,0 +1,314 @@
+/*
+ * Gradient checks for various architectures.
+ *
+ * Namespace requirements:
+ *  - "grad_check" available via `source("grad_check.dml") as grad_check`.
+ *  - "test_util" available via `source("test_util.dml") as test_util`.
+ *  - "affine" available via `source("affine.dml") as affine`.
+ *  - "relu" available via `source("relu.dml") as relu`.
+ *  - "l1_loss" available via `source("l1_loss.dml") as l1_loss`.
+ *  - "l2_loss" available via `source("l2_loss.dml") as l2_loss`.
+ *  - All dependencies of above sources.
+ */
+compute_rel_error = function(double dw_a, double dw_n) return (double rel_error) {
+  /*
+   * Relative error measure between two values.
+   *
+   * Uses smoothing to avoid divide-by-zero errors.
+   */
+  rel_error = abs(dw_a - dw_n) / max(1e-8, abs(dw_a) + abs(dw_n))
+}
+
+check_rel_error = function(double dw_a, double dw_n, double lossph, double lossmh)
+    return (double rel_error) {
+  /*
+   * Check and report any issues with the relative error measure between two values.
+   *
+   *  - Issues an "ERROR" statement for relative errors > 1e-2, indicating that the gradient is
+   * likely incorrect.
+   *  - Issues a "WARNING" statment for relative errors < 1e-2 but > 1e-4, indicating that the
+   * may be incorrect.
+   */
+  # Compute relative error
+  rel_error = grad_check::compute_rel_error(dw_a, dw_n)
+  
+  # Evaluate relative error
+  if (rel_error > 1e-2) {
+      print("ERROR: Relative error " + rel_error + " > 1e-2 with " + dw_a +
+            " analytical vs " + dw_n + " numerical, with lossph " + lossph +
+            " and lossmh " + lossmh)
+  }
+  else if (rel_error > 1e-4 & rel_error < 2e-2) {
+      print("WARNING: Relative error " + rel_error + "< 1e-2 & > 1e-4 with " + dw_a +
+            " analytical vs " + dw_n + " numerical, with lossph " + lossph +
+            " and lossmh " + lossmh)
+  }
+}
+
+l1_loss = function() {
+  /*
+   * Gradient check for L1 loss function.
+   */
+  print("Grad checking L1 loss function.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 1 # num targets
+  pred = rand(rows=N, cols=1)
+  y = rand(rows=N, cols=1)
+
+  # Compute analytical gradient
+  dpred = l1_loss::backward(pred, y)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(pred)) {
+    for (j in 1:ncol(pred)) {
+      # Compute numerical derivative
+      old = as.scalar(pred[i,j])
+      pred[i,j] = old - h
+      lossmh = l1_loss::forward(pred, y)
+      pred[i,j] = old + h
+      lossph = l1_loss::forward(pred, y)
+      pred[i,j] = old  # reset W[i,j]
+      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+    }
+  }
+}
+
+l2_loss = function() {
+  /*
+   * Gradient check for L2 loss function.
+   */
+  print("Grad checking L2 loss function.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 1 # num targets
+  pred = rand(rows=N, cols=1)
+  y = rand(rows=N, cols=1)
+
+  # Compute analytical gradient
+  dpred = l2_loss::backward(pred, y)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(pred)) {
+    for (j in 1:ncol(pred)) {
+      # Compute numerical derivative
+      old = as.scalar(pred[i,j])
+      pred[i,j] = old - h
+      lossmh = l2_loss::forward(pred, y)
+      pred[i,j] = old + h
+      lossph = l2_loss::forward(pred, y)
+      pred[i,j] = old  # reset W[i,j]
+      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+    }
+  }
+}
+
+affine = function() {
+  /*
+   * Gradient check for affine layer.
+   */
+  print("Grad checking affine layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 100 # num features
+  M = 10 # num neurons
+  X = rand(rows=N, cols=D)
+  y = rand(rows=N, cols=M)
+  [W, b] = affine::init(D, M)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = affine::forward(X, W, b)
+  dout = l2_loss::backward(out, y)
+  [dX, dW, db] = affine::backward(dout, X, W, b)
+
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking W.")
+  for (i in 1:nrow(W)) {
+    for (j in 1:ncol(W)) {
+      # Compute numerical derivative
+      old = as.scalar(W[i,j])
+      W[i,j] = old - h
+      outmh = affine::forward(X, W, b)
+      lossmh = l2_loss::forward(outmh, y)
+      W[i,j] = old + h
+      outph = affine::forward(X, W, b)
+      lossph = l2_loss::forward(outph, y)
+      W[i,j] = old  # reset
+      dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+    }
+  }
+  print(" - Grad checking b.")
+  for (j in 1:ncol(b)) {
+    # Compute numerical derivative
+    old = as.scalar(b[1,j])
+    b[1,j] = old - h
+    outmh = affine::forward(X, W, b)
+    lossmh = l2_loss::forward(outmh, y)
+    b[1,j] = old + h
+    outph = affine::forward(X, W, b)
+    lossph = l2_loss::forward(outph, y)
+    b[1,j] = old  # reset
+    db_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+    # Check error
+    rel_error = grad_check::check_rel_error(as.scalar(db[1,j]), db_num, lossph, lossmh)
+  }
+}
+
+relu = function() {
+  /*
+   * Gradient check for ReLU nonlinearity layer.
+   */
+  print("Grad checking ReLU nonlinearity layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  M = 10 # num neurons
+  X = rand(rows=N, cols=M)
+  y = rand(rows=N, cols=M)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = relu::forward(X)
+  dout = l2_loss::backward(out, y)
+  dX = relu::backward(dout, X)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = relu::forward(X)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = relu::forward(X)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+}
+
+two_layer_affine_l2_net = function() {
+  /*
+   * Gradient check for a two-layer, fully-connected, feed-forward network with L2 loss.
+   */
+  print("Grad checking two-layer, fully-connected, feed-forward network with ReLU nonlinearity, " +
+        "and L2 loss function.")
+
+  # Generate input data
+  N = 1000 # num examples
+  D = 100 # num features
+  yD = 1 # num targets
+  X = rand(rows=N, cols=D, pdf="normal") * 0.0001
+  y = rand(rows=N, cols=yD)
+
+  # Create 2-layer, fully-connected network
+  M = 10 # number of hidden neurons
+  [W1, b1] = affine::init(D, M)
+  [W2, b2] = affine::init(M, yD)
+
+  # Optimize for short "burn-in" time to move to characteristic
+  # mode of operation and unmask any real issues.
+  print(" - Burn-in:")
+  lr = 0.0001
+  decay = 0.99
+  for(i in 1:5) {
+    # Compute forward and backward passes of net
+    [pred, loss, dX, dW1, db1, dW2, db2] = test_util::two_layer_affine_l2_net(X, y, W1, b1, W2, b2)
+    print("   - L2 loss: " + loss)
+
+    # Optimize with basic SGD
+    W1 = W1 - lr * dW1
+    b1 = b1 - lr * db1
+    W2 = W2 - lr * dW2
+    b2 = b2 - lr * db2
+    lr = lr * decay
+  }
+
+  # Compute analytical gradients
+  [pred, loss, dX, dW1, db1, dW2, db2] = test_util::two_layer_affine_l2_net(X, y, W1, b1, W2, b2)
+  
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking W1")
+  for (i in 1:nrow(W1)) {
+    for (j in 1:ncol(W1)) {
+      # Compute numerical derivative
+      old_w = as.scalar(W1[i,j])
+      W1[i,j] = old_w - h
+      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      W1[i,j] = old_w + h
+      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      W1[i,j] = old_w  # reset W[i,j]
+      dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dW1[i,j]), dWij_num, lossph, lossmh)
+    }
+  }
+  print(" - Grad checking W2")
+  for (i in 1:nrow(W2)) {
+    for (j in 1:ncol(W2)) {
+      # Compute numerical derivative
+      old_w = as.scalar(W2[i,j])
+      W2[i,j] = old_w - h
+      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      W2[i,j] = old_w + h
+      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      W2[i,j] = old_w  # reset W[i,j]
+      dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dW2[i,j]), dWij_num, lossph, lossmh)
+    }
+  }
+  print(" - Grad checking b1")
+  for (j in 1:ncol(b1)) {
+    # Compute numerical derivative
+    old_b = as.scalar(b1[1,j])
+    b1[1,j] = old_b - h
+    [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+    b1[1,j] = old_b + h
+    [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+    b1[1,j] = old_b  # reset b[1,j]
+    dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+    # Check error
+    rel_error = grad_check::check_rel_error(as.scalar(db1[1,j]), dbij_num, lossph, lossmh)
+  }
+  print(" - Grad checking b2")
+  for (j in 1:ncol(b2)) {
+    # Compute numerical derivative
+    old_b = as.scalar(b2[1,j])
+    b2[1,j] = old_b - h
+    [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+    b2[1,j] = old_b + h
+    [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+    b2[1,j] = old_b  # reset b[1,j]
+    dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+    # Check error
+    rel_error = grad_check::check_rel_error(as.scalar(db2[1,j]), dbij_num, lossph, lossmh)
+  }
+}
+
