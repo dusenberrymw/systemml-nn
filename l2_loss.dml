@@ -7,8 +7,8 @@
 forward = function(matrix[double] pred, matrix[double] y) 
     return (double loss) {
   /*
-   * Computes the forward pass for an L2 loss function.  The inputs consist
-   * of N examples, each with M dimensions to predict.
+   * Computes the forward pass for an L2 loss function.  The inputs
+   * consist of N examples, each with M dimensions to predict.
    *
    * Inputs:
    *  - pred: Prediction matrix, of shape (N, M).
@@ -25,11 +25,11 @@ forward = function(matrix[double] pred, matrix[double] y)
 backward = function(matrix[double] pred, matrix[double] y) 
     return (matrix[double] dpred) {
   /*
-   * Computes the backward pass for an L2 loss function.  The inputs consist
-   * of N examples, each with M dimensions to predict.
+   * Computes the backward pass for an L2 loss function.  The inputs
+   * consist of N examples, each with M dimensions to predict.
    *
    * Inputs:
-   *  - matrix: Prediction matrix, of shape (N, M).
+   *  - pred: Prediction matrix, of shape (N, M).
    *  - y: Target matrix, of shape (N, M).
    *
    * Outputs:

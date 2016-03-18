@@ -22,8 +22,8 @@ backward = function(matrix[double] dout, matrix[double] X,
                     matrix[double] W, matrix[double] b)
     return (matrix[double] dX, matrix[double] dW, matrix[double] db) {
   /*
-   * Computes the backward pass for a fully-connected (affine) layer with
-   * M neurons.
+   * Computes the backward pass for a fully-connected (affine) layer
+   * with M neurons.
    *
    * Inputs:
    *  - dout: Derivatives from upstream, of shape (N, M).
@@ -47,9 +47,9 @@ init = function(integer D, integer M)
    * Initilalize the parameters of this layer.
    * 
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
-   * which limits the magnification of inputs/gradients during forward/backward
-   * passes by scaling unit-Gaussian weights by a factor of sqrt(2/n), under the
-   * assumption of relu neurons.
+   * which limits the magnification of inputs/gradients during
+   * forward/backward passes by scaling unit-Gaussian weights by a
+   * factor of sqrt(2/n), under the assumption of relu neurons.
    *
    * Inputs:
    *  - D: Dimensionality of the input features.
