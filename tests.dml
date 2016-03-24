@@ -1,0 +1,33 @@
+/*
+ * Script to run tests.
+ */
+source("grad_check.dml") as grad_check
+source("test_util.dml") as test_util
+source("cross_entropy_loss.dml") as cross_entropy_loss
+source("l1_loss.dml") as l1_loss
+source("l2_loss.dml") as l2_loss
+source("affine.dml") as affine
+source("conv_simple.dml") as conv
+source("relu.dml") as relu
+source("softmax.dml") as softmax
+
+print("")
+print("Starting grad checks.")
+print("---")
+
+tmp = grad_check::cross_entropy_loss()
+tmp = grad_check::l1_loss()
+tmp = grad_check::l2_loss()
+tmp = grad_check::affine()
+tmp = grad_check::conv()
+tmp = grad_check::relu()
+tmp = grad_check::softmax()
+tmp = grad_check::two_layer_affine_l2_net()
+
+print("---")
+print("Grad checks complete -- look for any ERRORs or WARNINGs.")
+print("If any tests involving ReLUs failed, try a few times " +
+      "to ensure that they were not false negatives due to " +
+      "kinks being crossed")
+print("")
+
