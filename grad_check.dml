@@ -95,9 +95,9 @@ l1_loss = function() {
 
   # Generate data
   N = 3 # num examples
-  D = 1 # num targets
-  pred = rand(rows=N, cols=1)
-  y = rand(rows=N, cols=1)
+  D = 2 # num targets
+  pred = rand(rows=N, cols=D)
+  y = rand(rows=N, cols=D)
 
   # Compute analytical gradient
   dpred = l1_loss::backward(pred, y)
@@ -129,7 +129,7 @@ l2_loss = function() {
 
   # Generate data
   N = 3 # num examples
-  D = 1 # num targets
+  D = 2 # num targets
   pred = rand(rows=N, cols=D)
   y = rand(rows=N, cols=D)
 
@@ -302,20 +302,22 @@ affine = function() {
   }
 
   print(" - Grad checking b.")
-  for (j in 1:ncol(b)) {
-    # Compute numerical derivative
-    old = as.scalar(b[1,j])
-    b[1,j] = old - h
-    outmh = affine::forward(X, W, b)
-    lossmh = l2_loss::forward(outmh, y)
-    b[1,j] = old + h
-    outph = affine::forward(X, W, b)
-    lossph = l2_loss::forward(outph, y)
-    b[1,j] = old  # reset
-    db_num = (lossph - lossmh) / (2 * h) # numerical derivative
+  for (i in 1:nrow(b)) {
+    for (j in 1:ncol(b)) {
+      # Compute numerical derivative
+      old = as.scalar(b[i,j])
+      b[i,j] = old - h
+      outmh = affine::forward(X, W, b)
+      lossmh = l2_loss::forward(outmh, y)
+      b[i,j] = old + h
+      outph = affine::forward(X, W, b)
+      lossph = l2_loss::forward(outph, y)
+      b[i,j] = old  # reset
+      db_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
-    # Check error
-    rel_error = grad_check::check_rel_error(as.scalar(db[1,j]), db_num, lossph, lossmh)
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+    }
   }
 }
 
@@ -391,18 +393,18 @@ conv = function() {
   for (i in 1:nrow(b)) {
     for (j in 1:ncol(b)) {
       # Compute numerical derivative
-      old = as.scalar(b[1,j])
-      b[1,j] = old - h
+      old = as.scalar(b[i,j])
+      b[i,j] = old - h
       [outmh, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossmh = l2_loss::forward(outmh, y)
-      b[1,j] = old + h
+      b[i,j] = old + h
       [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
-      b[1,j] = old  # reset
+      b[i,j] = old  # reset
       db_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(db[1,j]), db_num, lossph, lossmh)
+      rel_error = grad_check::check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -425,7 +427,7 @@ two_layer_affine_l2_net = function() {
   # Generate input data
   N = 1000 # num examples
   D = 100 # num features
-  yD = 1 # num targets
+  yD = 5 # num targets
   X = rand(rows=N, cols=D, pdf="normal") * 0.0001
   y = rand(rows=N, cols=yD)
 
@@ -509,33 +511,37 @@ two_layer_affine_l2_net = function() {
   }
 
   print(" - Grad checking b1")
-  for (j in 1:ncol(b1)) {
-    # Compute numerical derivative
-    old_b = as.scalar(b1[1,j])
-    b1[1,j] = old_b - h
-    [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
-    b1[1,j] = old_b + h
-    [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
-    b1[1,j] = old_b  # reset b[1,j]
-    dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+  for (i in 1:nrow(b1)) {
+    for (j in 1:ncol(b1)) {
+      # Compute numerical derivative
+      old_b = as.scalar(b1[i,j])
+      b1[i,j] = old_b - h
+      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      b1[i,j] = old_b + h
+      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      b1[i,j] = old_b  # reset b[1,j]
+      dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
-    # Check error
-    rel_error = grad_check::check_rel_error(as.scalar(db1[1,j]), dbij_num, lossph, lossmh)
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(db1[i,j]), dbij_num, lossph, lossmh)
+    }
   }
 
   print(" - Grad checking b2")
-  for (j in 1:ncol(b2)) {
-    # Compute numerical derivative
-    old_b = as.scalar(b2[1,j])
-    b2[1,j] = old_b - h
-    [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
-    b2[1,j] = old_b + h
-    [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
-    b2[1,j] = old_b  # reset b[1,j]
-    dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+  for (i in 1:nrow(b2)) {
+    for (j in 1:ncol(b2)) {
+      # Compute numerical derivative
+      old_b = as.scalar(b2[i,j])
+      b2[i,j] = old_b - h
+      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      b2[i,j] = old_b + h
+      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      b2[i,j] = old_b  # reset b[1,j]
+      dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
-    # Check error
-    rel_error = grad_check::check_rel_error(as.scalar(db2[1,j]), dbij_num, lossph, lossmh)
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)
+    }
   }
 }
 
