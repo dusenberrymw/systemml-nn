@@ -1,5 +1,5 @@
 /*
- * Cross-entropy Loss Function
+ * Cross-entropy loss function.
  *
  * L_i = -y_i^T * log(pred_i), where y_i and pred_i are K-dimensional
  *  vectors of class probs.
@@ -30,7 +30,6 @@ backward = function(matrix[double] pred, matrix[double] y)
    * Computes the backward pass of a cross-entropy loss function.  The
    * inputs consist of N examples, each with K dimensions corresponding
    * to normalized probabilities of K classes.
-   * 
    *
    * Inputs:
    *  - pred: Prediction matrix, of shape (N, K).

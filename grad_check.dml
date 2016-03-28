@@ -18,6 +18,13 @@ compute_rel_error = function(double dw_a, double dw_n) return (double rel_error)
    * Relative error measure between two values.
    *
    * Uses smoothing to avoid divide-by-zero errors.
+   *
+   * Inputs:
+   *  - dw_a: Analytical partial derivative wrt w.
+   *  - dw_n: Numerical partial derivative wrt w.
+   *
+   * Outputs:
+   *  - rel_error: Relative error measure between the two derivatives.
    */
   rel_error = abs(dw_a - dw_n) / max(1e-8, abs(dw_a) + abs(dw_n))
 }
@@ -25,12 +32,22 @@ compute_rel_error = function(double dw_a, double dw_n) return (double rel_error)
 check_rel_error = function(double dw_a, double dw_n, double lossph, double lossmh)
     return (double rel_error) {
   /*
-   * Check and report any issues with the relative error measure between two values.
+   * Check and report any issues with the relative error measure between
+   * two values.
    *
-   *  - Issues an "ERROR" statement for relative errors > 1e-2, indicating that the gradient is
-   * likely incorrect.
-   *  - Issues a "WARNING" statment for relative errors < 1e-2 but > 1e-4, indicating that the
-   * may be incorrect.
+   *  - Issues an "ERROR" statement for relative errors > 1e-2, 
+   *  indicating that the gradient is likely incorrect.
+   *  - Issues a "WARNING" statement for relative errors < 1e-2
+   *  but > 1e-4, indicating that the may be incorrect.
+   *
+   * Inputs:
+   *  - dw_a: Analytical partial derivative wrt w.
+   *  - dw_n: Numerical partial derivative wrt w.
+   *  - lossph: Loss evaluated with w set to w+h.
+   *  - lossmh: Loss evaluated with w set to w-h.
+   *
+   * Outputs:
+   *  - rel_error: Relative error measure between the two derivatives.
    */
   # Compute relative error
   rel_error = grad_check::compute_rel_error(dw_a, dw_n)

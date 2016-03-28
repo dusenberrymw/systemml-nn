@@ -13,7 +13,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b)
    *  - b: Biases vector, of shape (1, M).
    *
    * Outputs:
-   *  - out: Ouptuts, of shape (N, M).
+   *  - out: Outputs, of shape (N, M).
    */
   out = X %*% W + b
 }
@@ -44,7 +44,7 @@ backward = function(matrix[double] dout, matrix[double] X,
 init = function(integer D, integer M)
     return (matrix[double] W, matrix[double] b) {
   /*
-   * Initilalize the parameters of this layer.
+   * Initialize the parameters of this layer.
    * 
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during

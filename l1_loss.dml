@@ -1,5 +1,5 @@
 /*
- * L1 Loss Function
+ * L1 loss function.
  *
  * L_i = sum_j(abs((pred_i)_j - (y_i)_j)) for all j.
  * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.

@@ -12,7 +12,7 @@ forward = function(matrix[double] scores) return (matrix[double] probs) {
    *  - scores: Input data matrix, of shape (N, D).
    *
    * Outputs:
-   *  - probs: Ouptuts, of shape (N, D).
+   *  - probs: Outputs, of shape (N, D).
    */
   unnorm_probs = exp(scores)
   probs = unnorm_probs / rowSums(unnorm_probs)

@@ -1,5 +1,5 @@
 /*
- * L2 Loss Function
+ * L2 loss function.
  *
  * L_i = (1/2) 2norm(pred_i - y_i)^2
  * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.

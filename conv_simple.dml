@@ -1,5 +1,7 @@
 /*
  * 2D Convolutional layer.
+ *
+ * This implementation is intended to be a simple, reference version.
  */
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,
@@ -7,8 +9,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
     return (matrix[double] out, int Hout, int Wout) {
   /*
    * Computes the forward pass for a 2D spatial convolutional layer with
-   * F filters.  The input data has N examples, each being a 3D volume
-   * unrolled into a single vector.
+   * F filters.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
    *
    * This implementation is intended to be a simple, reference version.
    *
@@ -27,7 +29,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - padw: Padding for left and right sides.
    *
    * Outputs:
-   *  - out: Ouptuts, of shape (N, F*Hout*Wout).
+   *  - out: Outputs, of shape (N, F*Hout*Wout).
    *  - Hout: Output height.
    *  - Wout: Output width.
    */
@@ -209,7 +211,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
 init = function(int F, int C, int Hf, int Wf)
     return (matrix[double] W, matrix[double] b) {
   /*
-   * Initilalize the parameters of this layer.
+   * Initialize the parameters of this layer.
    * 
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during

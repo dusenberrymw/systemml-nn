@@ -5,7 +5,7 @@ forward = function(matrix[double] X) return (matrix[double] out) {
   /*
    * Computes the forward pass for a ReLU nonlinearity layer.
    *
-   * Performs an elementwise evaluation of f(input) = max(0, input).
+   * Performs an element-wise evaluation of f(input) = max(0, input).
    *
    * Inputs:
    *  - X: Input data matrix, of shape (any, any).
