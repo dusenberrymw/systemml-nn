@@ -1,0 +1,94 @@
+/*
+ * Various tests, not including gradient checks.
+ *
+ * Namespace requirements:
+ *  - "test" available via `source("test.dml") as test`.
+ *  - "conv" available via `source("conv.dml") as conv`.
+ *  - All dependencies of above sources.
+ */
+all_equal = function(matrix[double] x1, matrix[double] x2)
+    return(boolean equivalent) {
+  /*
+   * Determine if two matrices are equivalent.
+   *
+   * Inputs:
+   *  - x1: Input matrix, of shape (any, any).
+   *  - x2: Input matrix, of same shape as x1.
+   *
+   * Outputs:
+   *  - equivalent: Whether or not the two matrices are equivalent.
+   */
+  equivalent = as.logical(prod(ppred(x1, x2, "==")))
+}
+
+im2col = function() {
+  /*
+   * Test for the `im2col` and `col2im` functions.
+   */
+  print("Testing the im2col and col2im functions.")
+
+	# Generate data
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 2
+  pad = (Hin * stride - Hin + Hf - stride) / 2
+  Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
+  Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+  x = rand(rows=C, cols=Hin*Win)
+
+  # pad
+  x_pad = conv::pad_image(x, Hin, Win, pad, pad)
+
+  # im2col
+  x_cols = conv::im2col(x_pad, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride)
+
+  # col2im
+  x_pad2 = conv::col2im(x_cols, Hin+2*pad, Win+2*pad, C, Hf, Wf, stride, stride, "none")
+
+  # Equivalency check
+  equivalent = test::all_equal(x_pad, x_pad2)
+  if (!equivalent)
+    print("ERROR: im2col and then col2im does not yield the original image.")
+}
+
+padding = function() {
+  /*
+   * Test for the `pad_image` and `unpad_image` functions.
+   */
+  print("Testing the padding and unpadding functions.")
+
+  # Generate data
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  pad = 3  # padding
+  x = rand(rows=C, cols=Hin*Win)
+
+  # Pad image
+  x_pad = conv::pad_image(x, Hin, Win, pad, pad)
+  
+  # Check for padded rows & columns
+  for (c in 1:C) {
+    x_pad_slice = matrix(x_pad[c,], rows=Hin+2*pad, cols=Win+2*pad)
+    for (i in 1:pad) {
+      rowsum = sum(x_pad_slice[i,])
+      colsum = sum(x_pad_slice[,i])
+      if (rowsum != 0)
+        print("ERROR: Padding was not applied to row " + i + ".")
+      if (colsum != 0)
+        print("ERROR: Padding was not applied to column " + i + ".")
+    }
+  }
+
+  # Unpad image
+  x1 = conv::unpad_image(x_pad, Hin, Win, pad, pad)
+
+  # Equivalency check
+  equivalent = test::all_equal(x, x1)
+  if (!equivalent)
+    print("ERROR: Padding and then unpadding does not yield the original image.")
+}
+
