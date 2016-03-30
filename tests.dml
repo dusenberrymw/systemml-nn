@@ -1,17 +1,17 @@
 /*
  * Script to run tests.
  */
-source("grad_check.dml") as grad_check
-source("test.dml") as test
-source("test_util.dml") as test_util
-source("cross_entropy_loss.dml") as cross_entropy_loss
-source("l1_loss.dml") as l1_loss
-source("l2_loss.dml") as l2_loss
 source("affine.dml") as affine
 source("conv.dml") as conv
 source("conv_simple.dml") as conv_simple
+source("cross_entropy_loss.dml") as cross_entropy_loss
+source("grad_check.dml") as grad_check
+source("l1_loss.dml") as l1_loss
+source("l2_loss.dml") as l2_loss
 source("relu.dml") as relu
 source("softmax.dml") as softmax
+source("test.dml") as test
+source("test_util.dml") as test_util
 
 print("")
 print("Starting grad checks.")
@@ -40,6 +40,7 @@ print("---")
 
 tmp = test::padding()
 tmp = test::im2col()
+tmp = test::conv()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")

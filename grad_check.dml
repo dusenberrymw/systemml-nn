@@ -2,39 +2,23 @@
  * Gradient checks for various architectures.
  *
  * Namespace requirements:
- *  - "grad_check" available via `source("grad_check.dml") as grad_check`.
- *  - "test_util" available via `source("test_util.dml") as test_util`.
- *  - "cross_entropy" available via `source("cross_entropy_loss.dml") as cross_entropy_loss`.
- *  - "l1_loss" available via `source("l1_loss.dml") as l1_loss`.
- *  - "l2_loss" available via `source("l2_loss.dml") as l2_loss`.
  *  - "affine" available via `source("affine.dml") as affine`.
  *  - "conv" available via `source("conv.dml") as conv`.
  *  - "conv_simple" available via `source("conv_simple.dml") as conv_simple`.
+ *  - "cross_entropy" available via `source("cross_entropy_loss.dml") as cross_entropy_loss`.
+ *  - "grad_check" available via `source("grad_check.dml") as grad_check`.
+ *  - "l1_loss" available via `source("l1_loss.dml") as l1_loss`.
+ *  - "l2_loss" available via `source("l2_loss.dml") as l2_loss`.
  *  - "relu" available via `source("relu.dml") as relu`.
  *  - "softmax" available via `source("softmax.dml") as softmax`.
+ *  - "test_util" available via `source("test_util.dml") as test_util`.
  *  - All dependencies of above sources.
  */
-compute_rel_error = function(double dw_a, double dw_n) return (double rel_error) {
-  /*
-   * Relative error measure between two values.
-   *
-   * Uses smoothing to avoid divide-by-zero errors.
-   *
-   * Inputs:
-   *  - dw_a: Analytical partial derivative wrt w.
-   *  - dw_n: Numerical partial derivative wrt w.
-   *
-   * Outputs:
-   *  - rel_error: Relative error measure between the two derivatives.
-   */
-  rel_error = abs(dw_a - dw_n) / max(1e-8, abs(dw_a) + abs(dw_n))
-}
-
 check_rel_error = function(double dw_a, double dw_n, double lossph, double lossmh)
     return (double rel_error) {
   /*
    * Check and report any issues with the relative error measure between
-   * two values.
+   * the analytical and numerical partial derivatives.
    *
    *  - Issues an "ERROR" statement for relative errors > 1e-2, 
    *  indicating that the gradient is likely incorrect.
@@ -51,7 +35,7 @@ check_rel_error = function(double dw_a, double dw_n, double lossph, double lossm
    *  - rel_error: Relative error measure between the two derivatives.
    */
   # Compute relative error
-  rel_error = grad_check::compute_rel_error(dw_a, dw_n)
+  rel_error = test_util::compute_rel_error(dw_a, dw_n)
   
   # Evaluate relative error
   if (rel_error > 1e-2) {
@@ -549,7 +533,8 @@ two_layer_affine_l2_net = function() {
   decay = 0.99
   for(i in 1:5) {
     # Compute forward and backward passes of net
-    [pred, loss, dX, dW1, db1, dW2, db2] = test_util::two_layer_affine_l2_net(X, y, W1, b1, W2, b2)
+    [pred, loss, dX, dW1, db1, dW2, db2] =
+      grad_check::two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
     print("   - L2 loss: " + loss)
 
     # Optimize with basic SGD
@@ -561,7 +546,8 @@ two_layer_affine_l2_net = function() {
   }
 
   # Compute analytical gradients
-  [pred, loss, dX, dW1, db1, dW2, db2] = test_util::two_layer_affine_l2_net(X, y, W1, b1, W2, b2)
+  [pred, loss, dX, dW1, db1, dW2, db2] =
+    grad_check::two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
   
   # Grad check
   h = 1e-5
@@ -571,9 +557,9 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_w = as.scalar(X[i,j])
       X[i,j] = old_w - h
-      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       X[i,j] = old_w + h
-      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       X[i,j] = old_w  # reset W[i,j]
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
@@ -588,9 +574,9 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_w = as.scalar(W1[i,j])
       W1[i,j] = old_w - h
-      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W1[i,j] = old_w + h
-      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W1[i,j] = old_w  # reset W[i,j]
       dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
@@ -605,9 +591,9 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_w = as.scalar(W2[i,j])
       W2[i,j] = old_w - h
-      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W2[i,j] = old_w + h
-      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W2[i,j] = old_w  # reset W[i,j]
       dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
@@ -622,9 +608,9 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_b = as.scalar(b1[i,j])
       b1[i,j] = old_b - h
-      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b1[i,j] = old_b + h
-      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b1[i,j] = old_b  # reset b[1,j]
       dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
@@ -639,9 +625,9 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_b = as.scalar(b2[i,j])
       b2[i,j] = old_b - h
-      [lossmh, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b2[i,j] = old_b + h
-      [lossph, pred, aout, hout] = test_util::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b2[i,j] = old_b  # reset b[1,j]
       dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
@@ -649,5 +635,50 @@ two_layer_affine_l2_net = function() {
       rel_error = grad_check::check_rel_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)
     }
   }
+}
+
+/*
+ * Test network with forward/backward functions.
+ */
+two_layer_affine_l2_net_run = function(matrix[double] X, matrix[double] y,
+                                       matrix[double] W1, matrix[double] b1,
+                                       matrix[double] W2, matrix[double] b2)
+    return (matrix[double] pred, double loss,
+            matrix[double] dX,
+            matrix[double] dW1, matrix[double] db1,
+            matrix[double] dW2, matrix[double] db2) {
+  # Compute forward pass
+  [loss, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+
+  # Compute backward pass
+  [dX, dpred, daout, dhout, dW1, db1, dW2, db2] =
+    grad_check::two_layer_affine_l2_net_backward(X, y, pred, aout, hout, W1, b1, W2, b2)
+}
+
+two_layer_affine_l2_net_forward = function(matrix[double] X, matrix[double] y,
+                                           matrix[double] W1, matrix[double] b1,
+                                           matrix[double] W2, matrix[double] b2)
+    return (double loss, matrix[double] pred, matrix[double] aout, matrix[double] hout) {
+  # Compute forward pass
+  hout = affine::forward(X, W1, b1)
+  aout = relu::forward(hout)
+  pred = affine::forward(aout, W2, b2)
+
+  # Compute loss
+  loss = l2_loss::forward(pred, y)
+}
+
+two_layer_affine_l2_net_backward = function(matrix[double] X, matrix[double] y, matrix[double] pred,
+                                            matrix[double] aout, matrix[double] hout,
+                                            matrix[double] W1, matrix[double] b1,
+                                            matrix[double] W2, matrix[double] b2)
+    return (matrix[double] dX, matrix[double] dpred,
+            matrix[double] daout, matrix[double] dhout,
+            matrix[double] dW1, matrix[double] db1, matrix[double] dW2, matrix[double] db2) {
+  # Compute backward pass
+  dpred = l2_loss::backward(pred, y)
+  [daout, dW2, db2] = affine::backward(dpred, aout, W2, b2)
+  dhout = relu::backward(daout, hout)
+  [dX, dW1, db1] = affine::backward(dhout, X, W1, b1)
 }
 
