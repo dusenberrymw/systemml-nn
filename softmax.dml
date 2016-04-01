@@ -14,6 +14,13 @@ forward = function(matrix[double] scores) return (matrix[double] probs) {
    * Outputs:
    *  - probs: Outputs, of shape (N, D).
    */
+  # For numerical stability, we subtract the max score of an example from all scores for that
+  # example.  This is equivalent:
+  # e^scores_i / sum(e^scores_i) == C*e^scores_i / C*sum(e^scores_i)
+  #                              == e^(scores_i+log(C)) / sum(e^(scores_i+log(C))
+  # set log(C) = -max(scores_i):
+  #                              == e^(scores_i-max(scores_i)) / sum(e^(scores_i-max(scores_i))
+  scores = scores - rowMaxs(scores)  # numerical stability
   unnorm_probs = exp(scores)
   probs = unnorm_probs / rowSums(unnorm_probs)
 }
@@ -36,6 +43,7 @@ backward = function(matrix[double] dprobs, matrix[double] scores)
    * Outputs:
    *  - dscores: Gradient wrt scores, of shape (N, D).
    */
+  scores = scores - rowMaxs(scores)  # numerical stability
   unnorm_probs = exp(scores)
   probs = unnorm_probs / rowSums(unnorm_probs)
   dscores = dprobs * probs
