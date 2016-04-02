@@ -5,6 +5,7 @@ source("affine.dml") as affine
 source("conv.dml") as conv
 source("conv_simple.dml") as conv_simple
 source("cross_entropy_loss.dml") as cross_entropy_loss
+source("dropout.dml") as dropout
 source("grad_check.dml") as grad_check
 source("l1_loss.dml") as l1_loss
 source("l2_loss.dml") as l2_loss
@@ -25,6 +26,7 @@ tmp = grad_check::l2_loss()
 tmp = grad_check::affine()
 tmp = grad_check::conv_simple()
 tmp = grad_check::conv()
+tmp = grad_check::dropout()
 tmp = grad_check::max_pool_simple()
 tmp = grad_check::max_pool()
 tmp = grad_check::relu()
