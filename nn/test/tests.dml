@@ -1,20 +1,20 @@
 /*
  * Script to run tests.
  */
-source("affine.dml") as affine
-source("conv.dml") as conv
-source("conv_simple.dml") as conv_simple
-source("cross_entropy_loss.dml") as cross_entropy_loss
-source("dropout.dml") as dropout
-source("grad_check.dml") as grad_check
-source("l1_loss.dml") as l1_loss
-source("l2_loss.dml") as l2_loss
-source("max_pool.dml") as max_pool
-source("max_pool_simple.dml") as max_pool_simple
-source("relu.dml") as relu
-source("softmax.dml") as softmax
-source("test.dml") as test
-source("util.dml") as util
+source("nn/layers/affine.dml") as affine
+source("nn/layers/conv.dml") as conv
+source("nn/layers/conv_simple.dml") as conv_simple
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/dropout.dml") as dropout
+source("nn/test/grad_check.dml") as grad_check
+source("nn/layers/l1_loss.dml") as l1_loss
+source("nn/layers/l2_loss.dml") as l2_loss
+source("nn/layers/max_pool.dml") as max_pool
+source("nn/layers/max_pool_simple.dml") as max_pool_simple
+source("nn/layers/relu.dml") as relu
+source("nn/layers/softmax.dml") as softmax
+source("nn/test/test.dml") as test
+source("nn/util.dml") as util
 
 print("")
 print("Starting grad checks.")
