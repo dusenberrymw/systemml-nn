@@ -2,7 +2,7 @@
  * 2D Convolutional layer.
  *
  * Namespace requirements:
- *  - "util" available via `source("util.dml") as util`.
+ *  - "util" available via `source("nn/util.dml") as util`.
  *  - All dependencies of above sources.
  */
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,

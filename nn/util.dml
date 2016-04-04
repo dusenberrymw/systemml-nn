@@ -2,7 +2,7 @@
  * Utility functions.
  *
  * Namespace requirements:
- *  - "util" available via `source("util.dml") as util`.
+ *  - "util" available via `source("nn/util.dml") as util`.
  */
 all_equal = function(matrix[double] X1, matrix[double] X2)
     return(boolean equivalent) {
