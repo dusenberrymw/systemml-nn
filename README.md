@@ -1,30 +1,33 @@
-# SystemML-NN: An experimental deep learning library for [SystemML](https://github.com/apache/incubator-systemml).
+# SystemML-NN
+
+### An experimental deep learning library for [Apache SystemML](https://github.com/apache/incubator-systemml).
 
 ## Examples:
-### Simple neural net for regression:
+### Neural net for regression with vanilla SGD:
 ```python
 # Imports
 source("nn/layers/affine.dml") as affine
-source("nn/layers/relu.dml") as relu
 source("nn/layers/l2_loss.dml") as l2_loss
+source("nn/layers/relu.dml") as relu
 source("nn/optim/sgd.dml") as sgd
 
 # Generate input data
 N = 1024 # num examples
 D = 100 # num features
 t = 1 # num targets
-X = rand(rows=N, cols=D, pdf="normal") * 0.0001
+X = rand(rows=N, cols=D, pdf="normal")
 y = rand(rows=N, cols=t)
 
 # Create 2-layer network:
 ## affine1 -> relu1 -> affine2
-M = 10 # number of neurons
+M = 64 # number of neurons
 [W1, b1] = affine::init(D, M)
 [W2, b2] = affine::init(M, t)
 
 # Initialize optimizer
-lr = 0.1
-mu = 0.9
+lr = 0.05  # learning rate
+mu = 0.9  # momentum
+decay = 0.99  # learning rate decay constant
 
 # Optimize
 print("Starting optimization")
@@ -58,27 +61,31 @@ for (e in 1:epochs) {
     W2 = sgd::update(W2, dW2, lr)
     b2 = sgd::update(b2, db2, lr)
   }
+  # Decay learning rate
+  lr = lr * decay
 }
-print("")
 ```
 
 ### Neural net for multi-class classification with dropout and SGD w/ Nesterov momentum:
 ```python
 # Imports
 source("nn/layers/affine.dml") as affine
-source("nn/layers/relu.dml") as relu
-source("nn/layers/dropout.dml") as dropout
-source("nn/layers/softmax.dml") as softmax
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/dropout.dml") as dropout
+source("nn/layers/relu.dml") as relu
+source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 # Generate input data
 N = 1024 # num examples
 D = 100 # num features
 t = 5 # num targets
-X = rand(rows=N, cols=D, pdf="normal") * 0.0001
-y = rand(rows=N, cols=t, min=0, max=1, pdf="uniform")
-y = y / rowSums(y)  # normalized probs
+X = rand(rows=N, cols=D, pdf="normal")
+classes = round(rand(rows=N, cols=1, min=1, max=t, pdf="uniform"))
+y = matrix(0, rows=N, cols=t)
+parfor (i in 1:N) {
+  y[i, as.scalar(classes[i,1])] = 1  # one-hot encoding
+}
 
 # Create network:
 # affine1 -> relu1 -> dropout1 -> affine2 -> relu2 -> dropout2 -> affine3 -> softmax
@@ -90,16 +97,17 @@ p = 0.5  # dropout probability
 [W3, b3] = affine::init(H2, t)
 
 # Initialize SGD w/ Nesterov momentum optimizer
-lr = 0.1
-mu = 0.5
+lr = 0.05  # learning rate
+mu = 0.5  # momentum
+decay = 0.99  # learning rate decay constant
 vW1 = sgd_nesterov::init(W1); vb1 = sgd_nesterov::init(b1)
 vW2 = sgd_nesterov::init(W2); vb2 = sgd_nesterov::init(b2)
 vW3 = sgd_nesterov::init(W3); vb3 = sgd_nesterov::init(b3)
 
 # Optimize
 print("Starting optimization")
-batch_size = 32
-epochs = 5
+batch_size = 64
+epochs = 10
 iters = 1024 / batch_size
 for (e in 1:epochs) {
   for(i in 1:iters) {
@@ -147,6 +155,9 @@ for (e in 1:epochs) {
     [W3, vW3] = sgd_nesterov::update(W3, dW3, lr, mu, vW3)
     [b3, vb3] = sgd_nesterov::update(b3, db3, lr, mu, vb3)
   }
+  # Anneal momentum towards 0.999
+  mu = mu + (0.999 - mu)/(1+epochs-e)
+  # Decay learning rate
+  lr = lr * decay
 }
-print("")
 ```
