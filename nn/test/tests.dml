@@ -13,7 +13,9 @@ source("nn/layers/l2_reg.dml") as l2_reg
 source("nn/layers/max_pool.dml") as max_pool
 source("nn/layers/max_pool_simple.dml") as max_pool_simple
 source("nn/layers/relu.dml") as relu
+source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/softmax.dml") as softmax
+source("nn/layers/tanh.dml") as tanh
 source("nn/test/grad_check.dml") as grad_check
 source("nn/test/test.dml") as test
 source("nn/util.dml") as util
@@ -34,7 +36,9 @@ tmp = grad_check::l2_reg()
 tmp = grad_check::max_pool_simple()
 tmp = grad_check::max_pool()
 tmp = grad_check::relu()
+tmp = grad_check::sigmoid()
 tmp = grad_check::softmax()
+tmp = grad_check::tanh()
 tmp = grad_check::two_layer_affine_l2_net()
 
 print("---")

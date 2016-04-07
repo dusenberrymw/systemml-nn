@@ -15,7 +15,9 @@
  *  - "max_pool" available via `source("nn/layers/max_pool.dml") as max_pool`.
  *  - "max_pool_simple" available via `source("nn/layers/max_pool_simple.dml") as max_pool_simple`.
  *  - "relu" available via `source("nn/layers/relu.dml") as relu`.
+ *  - "sigmoid" available via `source("nn/layers/sigmoid.dml") as sigmoid`.
  *  - "softmax" available via `source("nn/layers/softmax.dml") as softmax`.
+ *  - "tanh" available via `source("nn/layers/tanh.dml") as tanh`.
  *  - "util" available via `source("nn/util.dml") as util`.
  *  - All dependencies of above sources.
  */
@@ -500,6 +502,8 @@ l2_reg = function() {
   lambda = 0.01
   W = rand(rows=D, cols=M)
 
+  if (1==1){}  # Needed due a rewrite bug
+
   # Compute analytical gradient
   dW = l2_reg::backward(W, lambda)
 
@@ -643,6 +647,84 @@ relu = function() {
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
       outph = relu::forward(X)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+}
+
+sigmoid = function() {
+  /*
+   * Gradient check for the sigmoid nonlinearity layer.
+   */
+  print("Grad checking the sigmoid nonlinearity layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  M = 10 # num neurons
+  X = rand(rows=N, cols=M)
+  y = rand(rows=N, cols=M)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = sigmoid::forward(X)
+  dout = l2_loss::backward(out, y)
+  dX = sigmoid::backward(dout, X)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = sigmoid::forward(X)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = sigmoid::forward(X)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+}
+
+tanh = function() {
+  /*
+   * Gradient check for the hyperbolic tangent (tanh) nonlinearity layer.
+   */
+  print("Grad checking the tanh nonlinearity layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  M = 10 # num neurons
+  X = rand(rows=N, cols=M)
+  y = rand(rows=N, cols=M)
+
+  if (1==1){}  # Needed due a rewrite bug
+
+  # Compute analytical gradients of loss wrt parameters
+  out = tanh::forward(X)
+  dout = l2_loss::backward(out, y)
+  dX = tanh::backward(dout, X)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = tanh::forward(X)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = tanh::forward(X)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
