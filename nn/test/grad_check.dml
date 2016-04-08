@@ -423,40 +423,6 @@ l1_loss = function() {
   }
 }
 
-l2_loss = function() {
-  /*
-   * Gradient check for the L2 loss function.
-   */
-  print("Grad checking the L2 loss function.")
-
-  # Generate data
-  N = 3 # num examples
-  D = 2 # num targets
-  pred = rand(rows=N, cols=D)
-  y = rand(rows=N, cols=D)
-
-  # Compute analytical gradient
-  dpred = l2_loss::backward(pred, y)
-
-  # Grad check
-  h = 1e-5
-  for (i in 1:nrow(pred)) {
-    for (j in 1:ncol(pred)) {
-      # Compute numerical derivative
-      old = as.scalar(pred[i,j])
-      pred[i,j] = old - h
-      lossmh = l2_loss::forward(pred, y)
-      pred[i,j] = old + h
-      lossph = l2_loss::forward(pred, y)
-      pred[i,j] = old  # reset W[i,j]
-      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
-
-      # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
-    }
-  }
-}
-
 l1_reg = function() {
   /*
    * Gradient check for the L1 regularization function.
@@ -487,6 +453,40 @@ l1_reg = function() {
 
       # Check error
       rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
+    }
+  }
+}
+
+l2_loss = function() {
+  /*
+   * Gradient check for the L2 loss function.
+   */
+  print("Grad checking the L2 loss function.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 2 # num targets
+  pred = rand(rows=N, cols=D)
+  y = rand(rows=N, cols=D)
+
+  # Compute analytical gradient
+  dpred = l2_loss::backward(pred, y)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(pred)) {
+    for (j in 1:ncol(pred)) {
+      # Compute numerical derivative
+      old = as.scalar(pred[i,j])
+      pred[i,j] = old - h
+      lossmh = l2_loss::forward(pred, y)
+      pred[i,j] = old + h
+      lossph = l2_loss::forward(pred, y)
+      pred[i,j] = old  # reset W[i,j]
+      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -730,6 +730,45 @@ sigmoid = function() {
   }
 }
 
+softmax = function() {
+  /*
+   * Gradient check for the softmax layer.
+   */
+  print("Grad checking the softmax layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 10 # num classes
+  X = rand(rows=N, cols=D)
+  y = rand(rows=N, cols=D, min=0, max=1, pdf="uniform")
+  y = y / rowSums(y)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = softmax::forward(X)
+  dout = l2_loss::backward(out, y)
+  dX = softmax::backward(dout, X)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = softmax::forward(X)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = softmax::forward(X)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+      # Check error
+      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+}
+
 tanh = function() {
   /*
    * Gradient check for the hyperbolic tangent (tanh) nonlinearity layer.
@@ -760,45 +799,6 @@ tanh = function() {
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
       outph = tanh::forward(X)
-      lossph = l2_loss::forward(outph, y)
-      X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
-
-      # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
-    }
-  }
-}
-
-softmax = function() {
-  /*
-   * Gradient check for the softmax layer.
-   */
-  print("Grad checking the softmax layer with L2 loss.")
-
-  # Generate data
-  N = 3 # num examples
-  D = 10 # num classes
-  X = rand(rows=N, cols=D)
-  y = rand(rows=N, cols=D, min=0, max=1, pdf="uniform")
-  y = y / rowSums(y)
-
-  # Compute analytical gradients of loss wrt parameters
-  out = softmax::forward(X)
-  dout = l2_loss::backward(out, y)
-  dX = softmax::backward(dout, X)
-
-  # Grad check
-  h = 1e-5
-  for (i in 1:nrow(X)) {
-    for (j in 1:ncol(X)) {
-      # Compute numerical derivative
-      old = as.scalar(X[i,j])
-      X[i,j] = old - h
-      outmh = softmax::forward(X)
-      lossmh = l2_loss::forward(outmh, y)
-      X[i,j] = old + h
-      outph = softmax::forward(X)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
