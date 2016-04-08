@@ -503,8 +503,6 @@ l2_reg = function() {
   lambda = 0.01
   W = rand(rows=D, cols=M)
 
-  if (1==1){}  # Needed due a rewrite bug
-
   # Compute analytical gradient
   dW = l2_reg::backward(W, lambda)
 
@@ -780,8 +778,6 @@ tanh = function() {
   M = 10 # num neurons
   X = rand(rows=N, cols=M)
   y = rand(rows=N, cols=M)
-
-  if (1==1){}  # Needed due a rewrite bug
 
   # Compute analytical gradients of loss wrt parameters
   out = tanh::forward(X)
