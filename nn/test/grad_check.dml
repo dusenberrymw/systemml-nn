@@ -7,7 +7,6 @@
  *  - "conv_simple" available via `source("nn/test/conv_simple.dml") as conv_simple`.
  *  - "cross_entropy_loss" available via `source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss`.
  *  - "dropout" available via `source("nn/layers/dropout.dml") as dropout`.
- *  - "grad_check" available via `source("nn/test/grad_check.dml") as grad_check`.
  *  - "l1_loss" available via `source("nn/layers/l1_loss.dml") as l1_loss`.
  *  - "l1_reg" available via `source("nn/layers/l1_reg.dml") as l1_reg`.
  *  - "l2_loss" available via `source("nn/layers/l2_loss.dml") as l2_loss`.
@@ -94,7 +93,7 @@ affine = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -113,7 +112,7 @@ affine = function() {
       dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -132,7 +131,7 @@ affine = function() {
       db_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -182,7 +181,7 @@ conv = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -201,7 +200,7 @@ conv = function() {
       dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -220,7 +219,7 @@ conv = function() {
       db_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -270,7 +269,7 @@ conv_simple = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -289,7 +288,7 @@ conv_simple = function() {
       dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -308,7 +307,7 @@ conv_simple = function() {
       db_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -344,7 +343,7 @@ cross_entropy_loss = function() {
       dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -384,7 +383,7 @@ dropout = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -418,7 +417,7 @@ l1_loss = function() {
       dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -452,7 +451,7 @@ l1_reg = function() {
       dW_num = (reg_lossph - reg_lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
+      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
     }
   }
 }
@@ -486,7 +485,7 @@ l2_loss = function() {
       dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -520,7 +519,7 @@ l2_reg = function() {
       dW_num = (reg_lossph - reg_lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
+      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
     }
   }
 }
@@ -554,7 +553,7 @@ log_loss = function() {
       dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -597,7 +596,7 @@ max_pool = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -640,7 +639,7 @@ max_pool_simple = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -685,7 +684,7 @@ relu = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -723,7 +722,7 @@ sigmoid = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -762,7 +761,7 @@ softmax = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -800,7 +799,7 @@ tanh = function() {
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -839,8 +838,7 @@ two_layer_affine_l2_net = function() {
   decay = 0.99
   for(i in 1:5) {
     # Compute forward and backward passes of net
-    [pred, loss, dX, dW1, db1, dW2, db2] =
-      grad_check::two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
+    [pred, loss, dX, dW1, db1, dW2, db2] = two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
     print("   - L2 loss: " + loss)
 
     # Optimize with basic SGD
@@ -852,8 +850,7 @@ two_layer_affine_l2_net = function() {
   }
 
   # Compute analytical gradients
-  [pred, loss, dX, dW1, db1, dW2, db2] =
-    grad_check::two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
+  [pred, loss, dX, dW1, db1, dW2, db2] = two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
   
   # Grad check
   h = 1e-5
@@ -863,14 +860,14 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_w = as.scalar(X[i,j])
       X[i,j] = old_w - h
-      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       X[i,j] = old_w + h
-      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       X[i,j] = old_w  # reset W[i,j]
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -880,14 +877,14 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_w = as.scalar(W1[i,j])
       W1[i,j] = old_w - h
-      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W1[i,j] = old_w + h
-      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W1[i,j] = old_w  # reset W[i,j]
       dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW1[i,j]), dWij_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dW1[i,j]), dWij_num, lossph, lossmh)
     }
   }
 
@@ -897,14 +894,14 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_w = as.scalar(W2[i,j])
       W2[i,j] = old_w - h
-      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W2[i,j] = old_w + h
-      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W2[i,j] = old_w  # reset W[i,j]
       dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(dW2[i,j]), dWij_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(dW2[i,j]), dWij_num, lossph, lossmh)
     }
   }
 
@@ -914,14 +911,14 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_b = as.scalar(b1[i,j])
       b1[i,j] = old_b - h
-      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b1[i,j] = old_b + h
-      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b1[i,j] = old_b  # reset b[1,j]
       dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(db1[i,j]), dbij_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(db1[i,j]), dbij_num, lossph, lossmh)
     }
   }
 
@@ -931,14 +928,14 @@ two_layer_affine_l2_net = function() {
       # Compute numerical derivative
       old_b = as.scalar(b2[i,j])
       b2[i,j] = old_b - h
-      [lossmh, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossmh, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b2[i,j] = old_b + h
-      [lossph, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+      [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b2[i,j] = old_b  # reset b[1,j]
       dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error
-      rel_error = grad_check::check_rel_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)
+      rel_error = check_rel_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)
     }
   }
 }
@@ -954,11 +951,11 @@ two_layer_affine_l2_net_run = function(matrix[double] X, matrix[double] y,
             matrix[double] dW1, matrix[double] db1,
             matrix[double] dW2, matrix[double] db2) {
   # Compute forward pass
-  [loss, pred, aout, hout] = grad_check::two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
+  [loss, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
 
   # Compute backward pass
   [dX, dpred, daout, dhout, dW1, db1, dW2, db2] =
-    grad_check::two_layer_affine_l2_net_backward(X, y, pred, aout, hout, W1, b1, W2, b2)
+    two_layer_affine_l2_net_backward(X, y, pred, aout, hout, W1, b1, W2, b2)
 }
 
 two_layer_affine_l2_net_forward = function(matrix[double] X, matrix[double] y,
