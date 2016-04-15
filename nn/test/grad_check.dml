@@ -4,7 +4,7 @@
  * Namespace requirements:
  *  - "affine" available via `source("nn/layers/affine.dml") as affine`.
  *  - "conv" available via `source("nn/layers/conv.dml") as conv`.
- *  - "conv_simple" available via `source("nn/layers/conv_simple.dml") as conv_simple`.
+ *  - "conv_simple" available via `source("nn/test/conv_simple.dml") as conv_simple`.
  *  - "cross_entropy_loss" available via `source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss`.
  *  - "dropout" available via `source("nn/layers/dropout.dml") as dropout`.
  *  - "grad_check" available via `source("nn/test/grad_check.dml") as grad_check`.
@@ -14,7 +14,7 @@
  *  - "l2_reg" available via `source("nn/layers/l2_reg.dml") as l2_reg`.
  *  - "log_loss" available via `source("nn/layers/log_loss.dml") as log_loss`.
  *  - "max_pool" available via `source("nn/layers/max_pool.dml") as max_pool`.
- *  - "max_pool_simple" available via `source("nn/layers/max_pool_simple.dml") as max_pool_simple`.
+ *  - "max_pool_simple" available via `source("nn/test/max_pool_simple.dml") as max_pool_simple`.
  *  - "relu" available via `source("nn/layers/relu.dml") as relu`.
  *  - "sigmoid" available via `source("nn/layers/sigmoid.dml") as sigmoid`.
  *  - "softmax" available via `source("nn/layers/softmax.dml") as softmax`.

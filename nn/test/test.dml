@@ -3,9 +3,9 @@
  *
  * Namespace requirements:
  *  - "conv" available via `source("nn/layers/conv.dml") as conv`.
- *  - "conv_simple" available via `source("nn/layers/conv_simple.dml") as conv_simple`.
+ *  - "conv_simple" available via `source("nn/test/conv_simple.dml") as conv_simple`.
  *  - "max_pool" available via `source("nn/layers/max_pool.dml") as max_pool`.
- *  - "max_pool_simple" available via `source("nn/layers/max_pool_simple.dml") as max_pool_simple`.
+ *  - "max_pool_simple" available via `source("nn/test/max_pool_simple.dml") as max_pool_simple`.
  *  - "util" available via `source("nn/util.dml") as util`.
  *  - All dependencies of above sources.
  */
