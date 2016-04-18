@@ -1,10 +1,8 @@
 /*
  * Max pooling layer.
- *
- * Namespace requirements:
- *  - "util" available via `source("nn/util.dml") as util`.
- *  - All dependencies of above sources.
  */
+source("nn/util.dml") as util
+
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew)
     return (matrix[double] out, int Hout, int Wout) {
