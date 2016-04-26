@@ -1,0 +1,115 @@
+/*
+ * Simple RNN layer.
+ */
+source("nn/layers/tanh.dml") as tanh
+
+forward = function(matrix[double] X, matrix[double] out0, matrix[double] W, matrix[double] b,
+                   int T, int D)
+    return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a simple RNN layer with M neurons.
+   * The input data has N sequences of T examples, each with D features.
+   *
+   * In a simple RNN, the output of one timestep is fed back in as an
+   * additional input at the next timestep.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, T*D).
+   *  - out0: Initial output state matrix, of shape (N, M).
+   *  - W: Weights (parameters) matrix, of shape (D+M, M).
+   *  - b: Biases vector, of shape (1, M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *
+   * Outputs:
+   *  - out: Outputs for all timesteps, of shape (N, T*M).
+   */
+  N = nrow(X)
+  M = ncol(W)
+  out_prev = out0
+  out = matrix(0, rows=N, cols=T*M)
+  for (t in 1:T) {  # each timestep
+    Xt = X[,(t-1)*D+1:t*D]  # shape (N, D)
+    input = cbind(Xt, out_prev)  # shape (N, D+M)
+    outt = tanh::forward(input %*% W + b)  # shape (N, M)
+    out[,(t-1)*M+1:t*M] = outt
+    out_prev = outt
+  }
+}
+
+backward = function(matrix[double] dout, matrix[double] out, matrix[double] X, matrix[double] out0,
+                    matrix[double] W, matrix[double] b, int T, int D)
+    return (matrix[double] dX, matrix[double] dout0, matrix[double] dW, matrix[double] db) {
+  /*
+   * Computes the backward pass for a simple RNN layer with M neurons.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of shape (N, T*M).
+   *  - out: Outputs for all timesteps, of shape (N, T*M).
+   *  - X: Input data matrix, of shape (N, T*D).
+   *  - out0: Initial output state matrix, of shape (N, M).
+   *  - W: Weights (parameters) matrix, of shape (D+M, M).
+   *  - b: Biases vector, of shape (1, M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, T*D).
+   *  - dout0: Gradient wrt out0, of shape (N, M).
+   *  - dW: Gradient wrt W, of shape (D+M, M).
+   *  - db: Gradient wrt b, of shape (1, M).
+   */
+  N = nrow(X)
+  M = ncol(W)
+  dX = matrix(0, rows=N, cols=T*D)
+  dout0 = matrix(0, rows=N, cols=M)
+  dW = matrix(0, rows=D+M, cols=M)
+  db = matrix(0, rows=1, cols=M)
+  t = T
+  for (i in 1:T) {  # each timestep in reverse order
+    doutt = dout[,(t-1)*M+1:t*M]  # shape (N, M)
+    outt = out[,(t-1)*M+1:t*M]  # shape (N, M)
+    Xt = X[,(t-1)*D+1:t*D]  # shape (N, D)
+    if (t == 1)
+      out_prev = out0  # shape (N, M)
+    else
+      out_prev = out[,(t-2)*M+1:(t-1)*M]  # shape (N, M)
+    input = cbind(Xt, out_prev)  # shape (N, D+M)
+    doutt_raw = (1 - outt^2) * doutt  # into tanh, shape (N, M)
+    dW = dW + t(input) %*% doutt_raw  # shape (D+M, M)
+    db = db + colSums(doutt_raw)  # shape (1, M)
+    dinput = doutt_raw %*% t(W)  # shape (N, D+M)
+    dX[,(t-1)*D+1:t*D] = dX[,(t-1)*D+1:t*D] + dinput[,1:D]
+    dout_prev = dinput[,D+1:D+M]  # shape (N, M)
+    if (t == 1)
+      dout0 = dout0 + dout_prev  # shape (N, M)
+    else
+      dout[,(t-2)*M+1:(t-1)*M] = dout[,(t-2)*M+1:(t-1)*M] + dout_prev  # shape (N, M)
+    t = t-1
+  }
+}
+
+init = function(integer D, integer M)
+    return (matrix[double] W, matrix[double] b) {
+  /*
+   * Initialize the parameters of this layer.
+   * 
+   * We use the Glorot uniform heuristic which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * uniform weights by a factor of sqrt(6/(fan_in + fan_out)).
+   *
+   * Inputs:
+   *  - D: Dimensionality of the input features.
+   *  - M: Number of neurons in this layer.
+   *
+   * Outputs:
+   *  - W: Weights (parameters) matrix, of shape (D+M, M).
+   *  - b: Biases vector, of shape (1, M).
+   */
+  fan_in = D+M
+  fan_out = M
+  scale = sqrt(6/(fan_in+fan_out))
+  W = rand(rows=D+M, cols=M, min=-scale, max=scale, pdf="uniform")
+  b = matrix(0, rows=1, cols=M) 
+}
+
