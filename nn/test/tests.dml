@@ -18,6 +18,7 @@ tmp = grad_check::conv()
 tmp = grad_check::dropout()
 tmp = grad_check::l1_reg()
 tmp = grad_check::l2_reg()
+tmp = grad_check::lstm()
 tmp = grad_check::max_pool_simple()
 tmp = grad_check::max_pool()
 tmp = grad_check::relu()
@@ -31,7 +32,7 @@ print("---")
 print("Grad checks complete -- look for any ERRORs or WARNINGs.")
 print("If any tests involving ReLUs failed, try a few times " +
       "to ensure that they were not false negatives due to " +
-      "kinks being crossed")
+      "kinks being crossed.")
 print("")
 
 print("")
