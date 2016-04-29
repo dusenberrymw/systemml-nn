@@ -5,8 +5,9 @@ source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/tanh.dml") as tanh
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
-                   matrix[double] out0, matrix[double] c0)
-    return (matrix[double] out, matrix[double] ct, matrix[double] c) {
+                   boolean return_sequences, matrix[double] out0, matrix[double] c0)
+    return (matrix[double] out, matrix[double] c,
+            matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog) {
   /*
    * Computes the forward pass for an LSTM layer with M neurons.
    * The input data has N sequences of T examples, each with D features.
@@ -27,21 +28,39 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
    *  - b: Biases vector, of shape (1, 4M).
    *  - T: Length of example sequences (number of timesteps).
    *  - D: Dimensionality of the input features.
+   *  - return_sequences: Whether to return `out` at all timesteps,
+   *      or just for the final timestep.
    *  - out0: Initial previous output matrix, of shape (N, M).
+   *      Note: This is optional and could just be an empty matrix.
    *  - c0: Initial cell state matrix, of shape (N, M).
+   *      Note: This is optional and could just be an empty matrix.
    *
    * Outputs:
-   *  - out: Outputs for all timesteps, of shape (N, T*M).
-   *  - ct: Cell state for final timestep, of shape (N, T*M).
-   *      This is returned as a convenience.
-   *  - c: Cell state for all timesteps, of shape (N, T*M).
+   *  - out: If `return_sequences` is True, outputs for all timesteps,
+   *      of shape (N, T*M).  Else, outputs for the final timestep, of
+   *      shape (N, M).
+   *  - c: Cell state for final timestep, of shape (N, T*M).
+   *  - cache_out: Cache of outputs, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_c: Cache of cell state, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_ifog: Cache of intermediate values, of shape (T, N*4M).
+   *      Note: This is used for performance during training.
    */
   N = nrow(X)
   M = as.integer(ncol(W)/4)
   out_prev = out0
   c_prev = c0
-  out = matrix(0, rows=N, cols=T*M)
-  c = matrix(0, rows=N, cols=T*M) 
+  c = c_prev
+  if (return_sequences)
+    out = matrix(0, rows=N, cols=T*M)
+  else
+    out = matrix(0, rows=N, cols=M)
+  # caches to be used during the backward pass for performance
+  cache_out = matrix(0, rows=T, cols=N*M)
+  cache_c = matrix(0, rows=T, cols=N*M) 
+  cache_ifog = matrix(0, rows=T, cols=N*4*M)
+
   for (t in 1:T) {  # each timestep
     Xt = X[,(t-1)*D+1:t*D]  # shape (N, D)
     input = cbind(Xt, out_prev)  # shape (N, D+M)
@@ -55,24 +74,30 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     tmp = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
     ifog[,3*M+1:4*M] = tmp
     # c_t = f*prev_c + i*g
-    ct = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
+    c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
     # out_t = o*tanh(c)
     # issue: only builtin functions are allowed in expressions
-    #outt = ifog[,2*M+1:3*M] * tanh::forward(ct)  # shape (N, M)
-    outt = tanh::forward(ct)
+    #outt = ifog[,2*M+1:3*M] * tanh::forward(c)  # shape (N, M)
+    outt = tanh::forward(c)
     outt = ifog[,2*M+1:3*M] * outt  # shape (N, M)
 
-    c[,(t-1)*M+1:t*M] = ct
-    c_prev = ct
-    out[,(t-1)*M+1:t*M] = outt
+    # store
+    if (return_sequences)
+      out[,(t-1)*M+1:t*M] = outt
+    else
+      out = outt
     out_prev = outt
+    c_prev = c
+    cache_out[t,] = matrix(outt, rows=1, cols=N*M)  # reshape
+    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
+    cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
   }
-  ct = c[,(T-1)*M+1:T*M]
 }
 
 backward = function(matrix[double] dout, matrix[double] dct, 
                     matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
-                    matrix[double] out0, matrix[double] c0, matrix[double] out, matrix[double] c)
+                    boolean given_sequences, matrix[double] out0, matrix[double] c0,
+                    matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog)
     return (matrix[double] dX, matrix[double] dW, matrix[double] db,
             matrix[double] dout0, matrix[double] dc0) {
   /*
@@ -80,6 +105,9 @@ backward = function(matrix[double] dout, matrix[double] dct,
    *
    * Inputs:
    *  - dout: Gradient on output from upstream, of shape (N, T*M).
+   *  - dout: If `return_sequences` is True, outputs for all timesteps,
+   *      of shape (N, T*M).  Else, outputs for the final timestep, of
+   *      shape (N, M).
    *  - dct: Gradient on current cell state from later in time,
    *      of shape (N, M).
    *  - X: Input data matrix, of shape (N, T*D).
@@ -87,10 +115,18 @@ backward = function(matrix[double] dout, matrix[double] dct,
    *  - b: Biases vector, of shape (1, 4M).
    *  - T: Length of example sequences (number of timesteps).
    *  - D: Dimensionality of the input features.
+   *  - given_sequences: Whether `dout` is for all timesteps,
+   *      or just for the final timestep.
    *  - out0: Initial previous output matrix, of shape (N, M).
+   *      Note: This is optional and could just be an empty matrix.
    *  - c0: Initial cell state matrix, of shape (N, M).
-   *  - out: Outputs for all timesteps, of shape (N, T*M).
-   *  - c: Cell state for all timesteps, of shape (N, T*M).
+   *      Note: This is optional and could just be an empty matrix.
+   *  - cache_out: Cache of outputs, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_c: Cache of cell state, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_ifog: Cache of intermediate values, of shape (T, N*4*M).
+   *      Note: This is used for performance during training.
    *
    * Outputs:
    *  - dX: Gradient wrt X, of shape (N, T*D).
@@ -102,33 +138,32 @@ backward = function(matrix[double] dout, matrix[double] dct,
   N = nrow(X)
   M = as.integer(ncol(W)/4)
   dX = matrix(0, rows=N, cols=T*D)
-  dW = matrix(0, rows=D+M, cols=M)
-  db = matrix(0, rows=1, cols=M)
+  dW = matrix(0, rows=D+M, cols=4*M)
+  db = matrix(0, rows=1, cols=4*M)
   dout0 = matrix(0, rows=N, cols=M)
   dc0 = matrix(0, rows=N, cols=M)
+  if (!given_sequences) {
+    # only given dout for output at final timestep, so prepend empty douts for all other timesteps
+    dout = cbind(matrix(0, rows=N, cols=(T-1)*D), dout)  # shape (N, T*M)
+  }
+
   # issue: can't iterate in reverse
   t = T
   for (iter in 1:T) {  # each timestep in reverse order
-    doutt = dout[,(t-1)*M+1:t*M]  # shape (N, M)
-    outt = out[,(t-1)*M+1:t*M]  # shape (N, M)
     Xt = X[,(t-1)*D+1:t*D]  # shape (N, D)
-    ct = c[,(t-1)*M+1:t*M]  # shape (N, M)
+    doutt = dout[,(t-1)*M+1:t*M]  # shape (N, M)
+    outt = matrix(cache_out[t,], rows=N, cols=M)  # shape (N, M)
+    ct = matrix(cache_c[t,], rows=N, cols=M)  # shape (N, M)
     if (t == 1) {
       out_prev = out0  # shape (N, M)
       c_prev = c0  # shape (N, M)
     }
     else {
-      out_prev = out[,(t-2)*M+1:(t-1)*M]  # shape (N, M)
-      c_prev = c[,(t-2)*M+1:(t-1)*M]  # shape (N, M)
+      out_prev = matrix(cache_out[t-1,], rows=N, cols=M)  # shape (N, M)
+      c_prev = matrix(cache_c[t-1,], rows=N, cols=M)  # shape (N, M)
     }
     input = cbind(Xt, out_prev)  # shape (N, D+M)
-    ifog = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-    # issue: only builtin functions are allowed in expressions
-    tmp = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
-    ifog[,1:3*M] = tmp
-    # issue: only builtin functions are allowed in expressions
-    tmp = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
-    ifog[,3*M+1:4*M] = tmp
+    ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
     i = ifog[,1:M]  # input gate, shape (N, M)
     f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
     o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
@@ -155,7 +190,7 @@ backward = function(matrix[double] dout, matrix[double] dct,
     dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
     db = db + colSums(difog_raw)  # shape (1, 4M)
     dinput = difog_raw %*% t(W)  # shape (N, D+M)
-    dX[,(t-1)*D+1:t*D] = dX[,(t-1)*D+1:t*D] + dinput[,1:D]
+    dX[,(t-1)*D+1:t*D] = dinput[,1:D]
     dout_prev = dinput[,D+1:D+M]  # shape (N, M)
     if (t == 1) {
       dout0 = dout_prev  # shape (N, M)

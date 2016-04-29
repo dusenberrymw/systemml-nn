@@ -50,8 +50,8 @@ check_rel_error = function(double dw_a, double dw_n, double lossph, double lossm
             " analytical vs " + dw_n + " numerical, with lossph " + lossph +
             " and lossmh " + lossmh)
   }
-  else if (rel_error > 1e-4 & rel_error < 2e-2) {
-      print("WARNING: Relative error " + rel_error + "< 1e-2 & > 1e-4 with " + dw_a +
+  else if (rel_error > 1e-4 & rel_error <= 1e-2) {
+      print("WARNING: Relative error " + rel_error + "<= 1e-2 & > 1e-4 with " + dw_a +
             " analytical vs " + dw_n + " numerical, with lossph " + lossph +
             " and lossmh " + lossmh)
   }
@@ -569,18 +569,20 @@ lstm = function() {
   D = 10  # num features
   T = 15  # num timesteps (sequence length)
   M = 5 # num neurons
+  return_seq = TRUE
   X = rand(rows=N, cols=T*D)
   out0 = rand(rows=N, cols=M)
   c0 = rand(rows=N, cols=M)
   y = rand(rows=N, cols=T*M)
-  yct = rand(rows=N, cols=M)
+  yc = rand(rows=N, cols=M)
   [W, b, dummy, dummy2] = lstm::init(N, D, M)
 
   # Compute analytical gradients of loss wrt parameters
-  [out, ct, c] = lstm::forward(X, W, b, T, D, out0, c0)
+  [out, c, cache_out, cache_c, cache_ifog] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
   dout = l2_loss::backward(out, y)
-  dct = l2_loss::backward(ct, yct)
-  [dX, dW, db, dout0, dc0] = lstm::backward(dout, dct, X, W, b, T, D, out0, c0, out, c)
+  dc = l2_loss::backward(c, yc)
+  [dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, X, W, b, T, D, return_seq, out0, c0,
+                                            cache_out, cache_c, cache_ifog)
 
   # Grad check
   h = 1e-5
@@ -590,14 +592,14 @@ lstm = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      [outmh, ctmh, c] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outmh = l2_loss::forward(outmh, y)
-      loss_cmh = l2_loss::forward(ctmh, yct)
+      loss_cmh = l2_loss::forward(cmh, yc)
       lossmh = loss_outmh + loss_cmh
       X[i,j] = old + h
-      [outph, ctph, cph] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outph = l2_loss::forward(outph, y)
-      loss_cph = l2_loss::forward(ctph, yct)
+      loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       X[i,j] = old  # reset
       dX_num = (lossph - lossmh) / (2 * h)  # numerical derivative
@@ -613,14 +615,14 @@ lstm = function() {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      [outmh, ctmh, cmh] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outmh = l2_loss::forward(outmh, y)
-      loss_cmh = l2_loss::forward(ctmh, yct)
+      loss_cmh = l2_loss::forward(cmh, yc)
       lossmh = loss_outmh + loss_cmh
       W[i,j] = old + h
-      [outph, ctph, cph] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outph = l2_loss::forward(outph, y)
-      loss_cph = l2_loss::forward(ctph, yct)
+      loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       W[i,j] = old  # reset
       dW_num = (lossph - lossmh) / (2 * h)  # numerical derivative
@@ -636,14 +638,14 @@ lstm = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      [outmh, ctmh, cmh] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outmh = l2_loss::forward(outmh, y)
-      loss_cmh = l2_loss::forward(ctmh, yct)
+      loss_cmh = l2_loss::forward(cmh, yc)
       lossmh = loss_outmh + loss_cmh
       b[i,j] = old + h
-      [outph, ctph, cph] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outph = l2_loss::forward(outph, y)
-      loss_cph = l2_loss::forward(ctph, yct)
+      loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       b[i,j] = old  # reset
       db_num = (lossph - lossmh) / (2 * h)  # numerical derivative
@@ -659,14 +661,14 @@ lstm = function() {
       # Compute numerical derivative
       old = as.scalar(c0[i,j])
       c0[i,j] = old - h
-      [outmh, ctmh, cmh] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outmh = l2_loss::forward(outmh, y)
-      loss_cmh = l2_loss::forward(ctmh, yct)
+      loss_cmh = l2_loss::forward(cmh, yc)
       lossmh = loss_outmh + loss_cmh
       c0[i,j] = old + h
-      [outph, ctph, cph] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outph = l2_loss::forward(outph, y)
-      loss_cph = l2_loss::forward(ctph, yct)
+      loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       c0[i,j] = old  # reset
       dc0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
@@ -682,14 +684,14 @@ lstm = function() {
       # Compute numerical derivative
       old = as.scalar(out0[i,j])
       out0[i,j] = old - h
-      [outmh, ctmh, cmh] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outmh = l2_loss::forward(outmh, y)
-      loss_cmh = l2_loss::forward(ctmh, yct)
+      loss_cmh = l2_loss::forward(cmh, yc)
       lossmh = loss_outmh + loss_cmh
       out0[i,j] = old + h
-      [outph, ctph, cph] = lstm::forward(X, W, b, T, D, out0, c0)
+      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
       loss_outph = l2_loss::forward(outph, y)
-      loss_cph = l2_loss::forward(ctph, yct)
+      loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       out0[i,j] = old  # reset
       dout0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
