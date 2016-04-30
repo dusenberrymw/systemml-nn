@@ -65,19 +65,13 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     Xt = X[,(t-1)*D+1:t*D]  # shape (N, D)
     input = cbind(Xt, out_prev)  # shape (N, D+M)
     ifog = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-    # issue: only builtin functions are allowed in expressions
-    #ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
     tmp = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
     ifog[,1:3*M] = tmp
-    # issue: only builtin functions are allowed in expressions
-    #ifog[,3*M+1:4*M]  = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
     tmp = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
     ifog[,3*M+1:4*M] = tmp
     # c_t = f*prev_c + i*g
     c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
     # out_t = o*tanh(c)
-    # issue: only builtin functions are allowed in expressions
-    #outt = ifog[,2*M+1:3*M] * tanh::forward(c)  # shape (N, M)
     outt = tanh::forward(c)
     outt = ifog[,2*M+1:3*M] * outt  # shape (N, M)
 
@@ -94,7 +88,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
   }
 }
 
-backward = function(matrix[double] dout, matrix[double] dct, 
+backward = function(matrix[double] dout, matrix[double] dc, 
                     matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
                     boolean given_sequences, matrix[double] out0, matrix[double] c0,
                     matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog)
@@ -108,8 +102,8 @@ backward = function(matrix[double] dout, matrix[double] dct,
    *  - dout: If `return_sequences` is True, outputs for all timesteps,
    *      of shape (N, T*M).  Else, outputs for the final timestep, of
    *      shape (N, M).
-   *  - dct: Gradient on current cell state from later in time,
-   *      of shape (N, M).
+   *  - dc: Gradient on current cell state from later in time, of
+   *      shape (N, M).
    *  - X: Input data matrix, of shape (N, T*D).
    *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
    *  - b: Biases vector, of shape (1, 4M).
@@ -142,12 +136,12 @@ backward = function(matrix[double] dout, matrix[double] dct,
   db = matrix(0, rows=1, cols=4*M)
   dout0 = matrix(0, rows=N, cols=M)
   dc0 = matrix(0, rows=N, cols=M)
+  dct = dc
   if (!given_sequences) {
     # only given dout for output at final timestep, so prepend empty douts for all other timesteps
     dout = cbind(matrix(0, rows=N, cols=(T-1)*D), dout)  # shape (N, T*M)
   }
 
-  # issue: can't iterate in reverse
   t = T
   for (iter in 1:T) {  # each timestep in reverse order
     Xt = X[,(t-1)*D+1:t*D]  # shape (N, D)
@@ -169,11 +163,8 @@ backward = function(matrix[double] dout, matrix[double] dct,
     o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
     g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
 
-    #dct = dct + o * tanh::backward(doutt, ct)  # shape (N, M)
-    # issue: only builtin functions are allowed in expressions
     tmp = tanh::backward(doutt, ct)
     dct = dct + o * tmp  # shape (N, M)
-    # issue: only builtin functions are allowed in expressions
     tmp = tanh::forward(ct)
     do = tmp * doutt  # output gate, shape (N, M)
     df = c_prev * dct  # forget gate, shape (N, M)
