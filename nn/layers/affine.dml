@@ -41,7 +41,7 @@ backward = function(matrix[double] dout, matrix[double] X,
   db = colSums(dout)
 }
 
-init = function(integer D, integer M)
+init = function(int D, int M)
     return (matrix[double] W, matrix[double] b) {
   /*
    * Initialize the parameters of this layer.
