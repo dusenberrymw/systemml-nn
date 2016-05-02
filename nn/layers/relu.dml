@@ -29,6 +29,6 @@ backward = function(matrix[double] dout, matrix[double] X) return (matrix[double
    * Outputs:
    *  - dX: Gradient wrt X, of same shape as X.
    */
-   dX = ppred(X, 0, ">") * dout
+   dX = (X > 0) * dout
 }
 

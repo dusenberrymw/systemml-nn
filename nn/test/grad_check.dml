@@ -51,7 +51,7 @@ check_rel_error = function(double dw_a, double dw_n, double lossph, double lossm
             " and lossmh " + lossmh)
   }
   else if (rel_error > 1e-4 & rel_error <= 1e-2) {
-      print("WARNING: Relative error " + rel_error + "<= 1e-2 & > 1e-4 with " + dw_a +
+      print("WARNING: Relative error " + rel_error + " <= 1e-2 & > 1e-4 with " + dw_a +
             " analytical vs " + dw_n + " numerical, with lossph " + lossph +
             " and lossmh " + lossmh)
   }
@@ -805,7 +805,7 @@ relu = function() {
   # Generate data
   N = 3 # num examples
   M = 10 # num neurons
-  X = rand(rows=N, cols=M)
+  X = rand(rows=N, cols=M, min=-5, max=5)
   y = rand(rows=N, cols=M)
 
   # Compute analytical gradients of loss wrt parameters
