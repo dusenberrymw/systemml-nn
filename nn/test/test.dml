@@ -2,7 +2,9 @@
  * Various tests, not including gradient checks.
  */
 source("nn/layers/conv.dml") as conv
+source("nn/layers/conv_builtin.dml") as conv_builtin
 source("nn/layers/max_pool.dml") as max_pool
+source("nn/layers/max_pool_builtin.dml") as max_pool_builtin
 source("nn/test/conv_simple.dml") as conv_simple
 source("nn/test/max_pool_simple.dml") as max_pool_simple
 source("nn/util.dml") as util
@@ -32,12 +34,17 @@ conv = function() {
   [out, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
   [out_simple, Hout_simple, Wout_simple] =
     conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] =
+    conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
 
   # Equivalency check
   out = matrix(out, rows=1, cols=N*F*Hout*Wout)
   out_simple = matrix(out_simple, rows=1, cols=N*F*Hout*Wout)
-  for (i in 1:length(out))
+  out_builtin = matrix(out_builtin, rows=1, cols=N*F*Hout*Wout)
+  for (i in 1:length(out)) {
     rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+    rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
 }
 
 im2col = function() {
@@ -131,12 +138,17 @@ max_pool = function() {
   [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
   [out_simple, Hout_simple, Wout_simple] =
     max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
+  [out_builtin, Hout_builtin, Wout_builtin] =
+    max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
 
   # Equivalency check
   out = matrix(out, rows=1, cols=N*C*Hout*Wout)
   out_simple = matrix(out_simple, rows=1, cols=N*C*Hout*Wout)
-  for (i in 1:length(out))
+  out_builtin = matrix(out_builtin, rows=1, cols=N*C*Hout*Wout)
+  for (i in 1:length(out)) {
     rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+    rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
 
   # ---
   # Check for correct behavior
