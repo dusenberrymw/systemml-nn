@@ -199,6 +199,9 @@ init = function(int N, int D, int M)
     return (matrix[double] W, matrix[double] b, matrix[double] out0, matrix[double] c0) {
   /*
    * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
    * 
    * We use the Glorot uniform heuristic which limits the magnification
    * of inputs/gradients during forward/backward passes by scaling
