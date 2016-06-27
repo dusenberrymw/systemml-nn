@@ -3,6 +3,7 @@
 ### An experimental deep learning library for [Apache SystemML](https://github.com/apache/incubator-systemml).
 
 ## Examples:
+#### Please see the `examples` folder for more detailed examples, or view the following two quick examples.
 ### Neural net for regression with vanilla SGD:
 ```python
 # Imports
