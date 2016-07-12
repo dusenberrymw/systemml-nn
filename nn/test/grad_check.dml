@@ -661,10 +661,10 @@ lstm = function() {
   M = 5 # num neurons
   return_seq = TRUE
   X = rand(rows=N, cols=T*D)
-  out0 = rand(rows=N, cols=M)
-  c0 = rand(rows=N, cols=M)
   y = rand(rows=N, cols=T*M)
   yc = rand(rows=N, cols=M)
+  out0 = rand(rows=N, cols=M)
+  c0 = rand(rows=N, cols=M)
   [W, b, dummy, dummy2] = lstm::init(N, D, M)
 
   # Compute analytical gradients of loss wrt parameters
@@ -745,29 +745,6 @@ lstm = function() {
     }
   }
 
-  print(" - Grad checking c0.")
-  for (i in 1:nrow(c0)) {
-    for (j in 1:ncol(c0)) {
-      # Compute numerical derivative
-      old = as.scalar(c0[i,j])
-      c0[i,j] = old - h
-      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
-      loss_outmh = l2_loss::forward(outmh, y)
-      loss_cmh = l2_loss::forward(cmh, yc)
-      lossmh = loss_outmh + loss_cmh
-      c0[i,j] = old + h
-      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
-      loss_outph = l2_loss::forward(outph, y)
-      loss_cph = l2_loss::forward(cph, yc)
-      lossph = loss_outph + loss_cph
-      c0[i,j] = old  # reset
-      dc0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
-
-      # Check error
-      rel_error = check_rel_error(as.scalar(dc0[i,j]), dc0_num, lossph, lossmh)
-    }
-  }
-
   print(" - Grad checking out0.")
   for (i in 1:nrow(out0)) {
     for (j in 1:ncol(out0)) {
@@ -791,6 +768,28 @@ lstm = function() {
     }
   }
 
+  print(" - Grad checking c0.")
+  for (i in 1:nrow(c0)) {
+    for (j in 1:ncol(c0)) {
+      # Compute numerical derivative
+      old = as.scalar(c0[i,j])
+      c0[i,j] = old - h
+      [outmh, cmh, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
+      loss_outmh = l2_loss::forward(outmh, y)
+      loss_cmh = l2_loss::forward(cmh, yc)
+      lossmh = loss_outmh + loss_cmh
+      c0[i,j] = old + h
+      [outph, cph, cache, cache, cache] = lstm::forward(X, W, b, T, D, return_seq, out0, c0)
+      loss_outph = l2_loss::forward(outph, y)
+      loss_cph = l2_loss::forward(cph, yc)
+      lossph = loss_outph + loss_cph
+      c0[i,j] = old  # reset
+      dc0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+
+      # Check error
+      rel_error = check_rel_error(as.scalar(dc0[i,j]), dc0_num, lossph, lossmh)
+    }
+  }
 }
 
 max_pool = function() {
@@ -978,15 +977,16 @@ rnn = function() {
   D = 10  # num features
   T = 15  # num timesteps (sequence length)
   M = 5 # num neurons
+  return_seq = TRUE
   X = rand(rows=N, cols=T*D)
-  out0 = rand(rows=N, cols=M)
   y = rand(rows=N, cols=T*M)
-  [W, b] = rnn::init(D, M)
+  out0 = rand(rows=N, cols=M)
+  [W, b, dummy] = rnn::init(N, D, M)
 
   # Compute analytical gradients of loss wrt parameters
-  out = rnn::forward(X, out0, W, b, T, D)
+  [out, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
   dout = l2_loss::backward(out, y)
-  [dX, dout0, dW, db] = rnn::backward(dout, out, X, out0, W, b, T, D)
+  [dX, dW, db, dout0] = rnn::backward(dout, X, W, b, T, D, return_seq, out0, cache_out)
 
   # Grad check
   h = 1e-5
@@ -996,10 +996,10 @@ rnn = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      outmh = rnn::forward(X, out0, W, b, T, D)
+      [outmh, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
-      outph = rnn::forward(X, out0, W, b, T, D)
+      [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph - lossmh) / (2 * h)  # numerical derivative
@@ -1009,35 +1009,16 @@ rnn = function() {
     }
   }
 
-  print(" - Grad checking out0.")
-  for (i in 1:nrow(out0)) {
-    for (j in 1:ncol(out0)) {
-      # Compute numerical derivative
-      old = as.scalar(out0[i,j])
-      out0[i,j] = old - h
-      outmh = rnn::forward(X, out0, W, b, T, D)
-      lossmh = l2_loss::forward(outmh, y)
-      out0[i,j] = old + h
-      outph = rnn::forward(X, out0, W, b, T, D)
-      lossph = l2_loss::forward(outph, y)
-      out0[i,j] = old  # reset
-      dout0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
-
-      # Check error
-      rel_error = check_rel_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
-    }
-  }
-
   print(" - Grad checking W.")
   for (i in 1:nrow(W)) {
     for (j in 1:ncol(W)) {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      outmh = rnn::forward(X, out0, W, b, T, D)
+      [outmh, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossmh = l2_loss::forward(outmh, y)
       W[i,j] = old + h
-      outph = rnn::forward(X, out0, W, b, T, D)
+      [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
       dW_num = (lossph - lossmh) / (2 * h)  # numerical derivative
@@ -1053,16 +1034,35 @@ rnn = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      outmh = rnn::forward(X, out0, W, b, T, D)
+      [outmh, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
-      outph = rnn::forward(X, out0, W, b, T, D)
+      [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph - lossmh) / (2 * h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking out0.")
+  for (i in 1:nrow(out0)) {
+    for (j in 1:ncol(out0)) {
+      # Compute numerical derivative
+      old = as.scalar(out0[i,j])
+      out0[i,j] = old - h
+      [outmh, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
+      lossmh = l2_loss::forward(outmh, y)
+      out0[i,j] = old + h
+      [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
+      lossph = l2_loss::forward(outph, y)
+      out0[i,j] = old  # reset
+      dout0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+
+      # Check error
+      rel_error = check_rel_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
     }
   }
 }
