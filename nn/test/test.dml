@@ -1,6 +1,7 @@
 /*
  * Various tests, not including gradient checks.
  */
+source("nn/layers/batch_norm.dml") as batch_norm
 source("nn/layers/conv.dml") as conv
 source("nn/layers/conv_builtin.dml") as conv_builtin
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
@@ -10,6 +11,36 @@ source("nn/layers/tanh.dml") as tanh
 source("nn/test/conv_simple.dml") as conv_simple
 source("nn/test/max_pool_simple.dml") as max_pool_simple
 source("nn/util.dml") as util
+
+batch_norm = function() {
+  /*
+   * Test for the `batch_norm` function.
+   */
+  print("Testing the batch_norm function.")
+
+  # Generate data
+  N = 4  # Number of examples
+  D = 4  # Number of features
+  X = matrix(seq(1,16), rows=N, cols=D)
+
+  # Create layer
+  [gamma, beta, ema_mean, ema_var] = batch_norm::init(D)
+
+  # Forward
+  [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+      batch_norm::forward(X, gamma, beta, ema_mean, ema_var, 'train', 0.9, 1e-5)
+
+  # Equivalency check
+  target = matrix("-1.34160721 -1.34160721 -1.34160733 -1.34160709
+                   -0.44720244 -0.44720244 -0.44720244 -0.44720232
+                    0.44720244  0.44720232  0.44720244  0.44720244
+                    1.34160733  1.34160721  1.34160733  1.34160733", rows=1, cols=N*D)
+  out = matrix(out, rows=1, cols=N*D)
+  for (i in 1:length(out)) {
+    rel_error = util::check_rel_error(as.scalar(out[1,i]),
+                                      as.scalar(target[1,i]), 1e-3, 1e-4)
+  }
+}
 
 conv = function() {
   /*
