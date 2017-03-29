@@ -31,6 +31,7 @@ tmp = grad_check::relu()
 tmp = grad_check::rnn()
 tmp = grad_check::sigmoid()
 tmp = grad_check::softmax()
+tmp = grad_check::spatial_batch_norm()
 tmp = grad_check::tanh()
 
 # Example model
@@ -53,6 +54,7 @@ tmp = test::padding()
 tmp = test::conv()
 tmp = test::cross_entropy_loss()
 tmp = test::max_pool()
+tmp = test::spatial_batch_norm()
 tmp = test::tanh()
 
 print("---")

@@ -2,8 +2,8 @@
  * Batch normalization layer.
  */
 forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
-                   matrix[double] ema_mean, matrix[double] ema_var,
-                   string mode, double mu, double epsilon)
+                   string mode, matrix[double] ema_mean, matrix[double] ema_var,
+                   double mu, double epsilon)
     return (matrix[double] out, matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
             matrix[double] cache_mean, matrix[double] cache_var, matrix[double] cache_norm) {
   /*
@@ -12,8 +12,8 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    * A batch normalization layer uses the per-feature sample mean and
    * per-feature uncorrected sample variance during training to
    * normalize each feature of the input data.  Additionally, it
-   * introduces learnable parameters (gamma, beta) to control the amount
-   * of normalization.
+   * introduces learnable parameters (gamma, beta) to control the
+   * amount of normalization.
    *
    *    y = ((x-mean) / sqrt(var+eps)) * gamma + beta
    *
@@ -29,15 +29,15 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    *  - X: Input data matrix, of shape (N, D).
    *  - gamma: Scale parameters, of shape (1, D).
    *  - beta: Shift parameters, of shape (1, D).
-   *  - ema_mean: Exponential moving average of the mean, of
-   *      shape (1, D).
-   *  - ema_var: Exponential moving average of the variance, of
-   *      shape (1, D).
    *  - mode: 'train' or 'test' to indicate if the model is currently
    *      being trained or tested.  During training, the current batch
    *      mean and variance will be used to normalize the inputs, while
    *      during testing, the exponential average of the mean and
    *      variance over all previous batches will be used.
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (1, D).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (1, D).
    *  - mu: Momentum value for moving averages.
    *      Typical values are in the range of [0.9, 0.999].
    *  - epsilon: Smoothing term to avoid divide by zero errors.
@@ -53,7 +53,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    *      Note: This is used for performance during training.
    *  - cache_var: Cache of the batch variance, of shape (1, D).
    *      Note: This is used for performance during training.
-   *  - cache_norm: Cache of the normalized inputs, of shape (1, D).
+   *  - cache_norm: Cache of the normalized inputs, of shape (N, D).
    *      Note: This is used for performance during training.
    */
   N = nrow(X)
@@ -61,7 +61,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
   if(mode == 'train') {
     # Compute feature-wise mean and variance
     mean = colMeans(X)  # shape (1, D)
-    #var = (1/N) * colSums((X-mean)^2)
+    # var = (1/N) * colSums((X-mean)^2)
     var = colVars(X) * ((N-1)/N)  # compute uncorrected variance, of shape (1, D)
     # Update moving averages
     ema_mean_upd = mu*ema_mean + (1-mu)*mean
@@ -76,9 +76,9 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
   }
 
   # Normalize, shift, and scale
-  #norm = (X-mean)*(var+epsilon)^(-1/2)
+  # norm = (X-mean)*(var+epsilon)^(-1/2)
   norm = (X-mean) / sqrt(var+epsilon)  # shape (N, D)
-  out = norm*gamma + beta
+  out = norm*gamma + beta  # shape (N, D)
 
   # Save variable for backward pass
   cache_mean = mean
@@ -90,8 +90,8 @@ backward = function(matrix[double] dout, matrix[double] out,
                     matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
                     matrix[double] cache_mean, matrix[double] cache_var, matrix[double] cache_norm,
                     matrix[double] X, matrix[double] gamma, matrix[double] beta,
-                    matrix[double] ema_mean, matrix[double] ema_var,
-                    string mode, double mu, double epsilon)
+                    string mode, matrix[double] ema_mean, matrix[double] ema_var,
+                    double mu, double epsilon)
       return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
   /*
    * Computes the backward pass for a batch normalization layer.
@@ -110,20 +110,20 @@ backward = function(matrix[double] dout, matrix[double] out,
    *      of shape (1, D).  Note: This is used for performance during
    *      training.
    *  - cache_norm: Cache of the normalized inputs from the forward
-   *      pass, of shape (1, D).  Note: This is used for performance
+   *      pass, of shape (N, D).  Note: This is used for performance
    *      during training.
    *  - X: Input data matrix to the forward pass, of shape (N, D).
    *  - gamma: Scale parameters, of shape (1, D).
    *  - beta: Shift parameters, of shape (1, D).
-   *  - ema_mean: Exponential moving average of the mean, of
-   *      shape (1, D).
-   *  - ema_var: Exponential moving average of the variance, of
-   *      shape (1, D).
    *  - mode: 'train' or 'test' to indicate if the model is currently
    *      being trained or tested.  During training, the current batch
    *      mean and variance will be used to normalize the inputs, while
    *      during testing, the exponential average of the mean and
    *      variance over all previous batches will be used.
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (1, D).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (1, D).
    *  - mu: Momentum value for moving averages.
    *      Typical values are in the range of [0.9, 0.999].
    *  - epsilon: Smoothing term to avoid divide by zero errors.
@@ -139,21 +139,22 @@ backward = function(matrix[double] dout, matrix[double] out,
   mean = cache_mean
   var = cache_var
   norm = cache_norm
+  centered = X-mean
 
   if (mode == 'train') {
     # Compute gradients during training
-    dnorm = dout * gamma  # shape (N, D)
     dgamma = colSums(norm*dout)  # shape (1, D)
     dbeta = colSums(dout)  # shape (1, D)
-    dvar = (-1/2) * colSums((X-mean) * (var+epsilon)^(-3/2) * dout)  # shape (1, D)
-    dmean = colSums((-dout/sqrt(var+epsilon)) + ((-2/N)*(X-mean)*dvar))  # shape (1, D)
-    dX = (dnorm/sqrt(var+epsilon)) + ((2/N)*(X-mean)*dvar) + ((1/N)*dmean)  # shape (N, D)
+    dnorm = dout * gamma  # shape (N, D)
+    dvar = (-1/2) * colSums(centered * (var+epsilon)^(-3/2) * dnorm)  # shape (1, D)
+    dmean = colSums((-dnorm/sqrt(var+epsilon)) + ((-2/N)*centered*dvar))  # shape (1, D)
+    dX = (dnorm/sqrt(var+epsilon)) + ((2/N)*centered*dvar) + ((1/N)*dmean)  # shape (N, D)
   }
   else {
     # Compute gradients during testing
-    dnorm = dout * gamma  # shape (N, D)
     dgamma = colSums(norm*dout)  # shape (1, D)
     dbeta = colSums(dout)  # shape (1, D)
+    dnorm = dout * gamma  # shape (N, D)
     dX = dnorm / sqrt(var+epsilon)  # shape (N, D)
   }
 }
@@ -173,8 +174,10 @@ init = function(int D)
    * Outputs:
    *  - gamma: Scale parameters, of shape (1, D).
    *  - beta: Shift parameters, of shape (1, D).
-   *  - ema_mean: Exponential moving average of the mean, of shape (1, D).
-   *  - ema_var: Exponential moving average of the variance, of shape (1, D).
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (1, D).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (1, D).
    */
    gamma = matrix(1, rows=1, cols=D)
    beta = matrix(0, rows=1, cols=D)
