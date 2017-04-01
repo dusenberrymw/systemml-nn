@@ -1,5 +1,5 @@
 /*
- * Max pooling layer.
+ * Max Pooling layer.
  */
 source("nn/util.dml") as util
 
