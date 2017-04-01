@@ -1,5 +1,5 @@
 /*
- * Cross-entropy loss function.
+ * Cross-Entropy loss function.
  */
 
 forward = function(matrix[double] pred, matrix[double] y)

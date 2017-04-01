@@ -1,5 +1,5 @@
 /*
- * L2 regularizataion.
+ * L2 regularization.
  */
 
 forward = function(matrix[double] X, double lambda)

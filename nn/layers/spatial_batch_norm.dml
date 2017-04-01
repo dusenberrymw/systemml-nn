@@ -1,5 +1,5 @@
 /*
- * Spatial batch normalization layer.
+ * Spatial Batch Normalization layer.
  */
 source("nn/util.dml") as util
 

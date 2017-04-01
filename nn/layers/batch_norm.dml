@@ -1,5 +1,5 @@
 /*
- * Batch normalization layer.
+ * Batch Normalization layer.
  */
 
 forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
