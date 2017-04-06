@@ -1,5 +1,5 @@
 /*
- * Spatial Batch Normalization layer.
+ * 2D (Spatial) Batch Normalization layer.
  */
 source("nn/util.dml") as util
 
@@ -10,7 +10,9 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
     return (matrix[double] out, matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
             matrix[double] cache_mean, matrix[double] cache_var, matrix[double] cache_norm) {
   /*
-   * Computes the forward pass for a spatial batch normalization layer.
+   * Computes the forward pass for a 2D (spatial) batch normalization
+   * layer.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
    *
    * A spatial batch normalization layer uses the per-channel sample
    * mean and per-channel uncorrected sample variance during training
@@ -110,7 +112,8 @@ backward = function(matrix[double] dout, matrix[double] out,
                     double mu, double epsilon)
       return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
   /*
-   * Computes the backward pass for a spatial batch normalization layer.
+   * Computes the backward pass for a 2D (spatial) batch normalization
+   * layer.
    *
    * Inputs:
    *  - dout: Gradient wrt `out` from upstream, of shape (N, C*Hin*Win).
@@ -163,7 +166,7 @@ backward = function(matrix[double] dout, matrix[double] out,
 
   if (mode == 'train') {
     # Compute gradients during training
-    dgamma = util::channel_sums(norm*dout, C, Hin, Win)  # shape (C, 1)
+    dgamma = util::channel_sums(dout*norm, C, Hin, Win)  # shape (C, 1)
     dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
     dnorm = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
     dvar = util::channel_sums((-1/2) * bias_multiply(centered, (var+epsilon)^(-3/2)) * dnorm,
@@ -179,7 +182,7 @@ backward = function(matrix[double] dout, matrix[double] out,
   }
   else {
     # Compute gradients during testing
-    dgamma = util::channel_sums(norm*dout, C, Hin, Win)  # shape (C, 1)
+    dgamma = util::channel_sums(dout*norm, C, Hin, Win)  # shape (C, 1)
     dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
     dnorm = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
     dX = bias_multiply(dnorm, 1/sqrt(var+epsilon))  # shape (N, C*Hin*Win)

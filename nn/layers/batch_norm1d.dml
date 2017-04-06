@@ -1,5 +1,5 @@
 /*
- * Batch Normalization layer.
+ * 1D Batch Normalization layer.
  */
 
 forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
@@ -8,7 +8,8 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
     return (matrix[double] out, matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
             matrix[double] cache_mean, matrix[double] cache_var, matrix[double] cache_norm) {
   /*
-   * Computes the forward pass for a batch normalization layer.
+   * Computes the forward pass for a 1D batch normalization layer.
+   * The input data has N examples, each with D features.
    *
    * A batch normalization layer uses the per-feature sample mean and
    * per-feature uncorrected sample variance during training to
@@ -95,7 +96,7 @@ backward = function(matrix[double] dout, matrix[double] out,
                     double mu, double epsilon)
       return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
   /*
-   * Computes the backward pass for a batch normalization layer.
+   * Computes the backward pass for a 1D batch normalization layer.
    *
    * Inputs:
    *  - dout: Gradient wrt `out` from upstream, of shape (N, D).
@@ -144,7 +145,7 @@ backward = function(matrix[double] dout, matrix[double] out,
 
   if (mode == 'train') {
     # Compute gradients during training
-    dgamma = colSums(norm*dout)  # shape (1, D)
+    dgamma = colSums(dout*norm)  # shape (1, D)
     dbeta = colSums(dout)  # shape (1, D)
     dnorm = dout * gamma  # shape (N, D)
     dvar = (-1/2) * colSums(centered * (var+epsilon)^(-3/2) * dnorm)  # shape (1, D)
@@ -153,7 +154,7 @@ backward = function(matrix[double] dout, matrix[double] out,
   }
   else {
     # Compute gradients during testing
-    dgamma = colSums(norm*dout)  # shape (1, D)
+    dgamma = colSums(dout*norm)  # shape (1, D)
     dbeta = colSums(dout)  # shape (1, D)
     dnorm = dout * gamma  # shape (N, D)
     dX = dnorm / sqrt(var+epsilon)  # shape (N, D)
