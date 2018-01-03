@@ -2,6 +2,8 @@
 
 ### A deep learning library for [Apache SystemML](https://github.com/apache/incubator-systemml).
 
+### \*\*Update\*\*: The SystemML-NN library has been merged into the Apache SystemML project, and can be found at https://github.com/apache/systemml/tree/master/scripts/nn.
+
 ## Examples:
 #### Please see the [`examples`](nn/examples) folder for more detailed examples, or view the following two quick examples.
 ### Neural net for regression with vanilla SGD:
